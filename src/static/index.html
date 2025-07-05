@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV商品分析器</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            transition: all 0.3s ease;
+        }
+        .upload-area.dragover {
+            border-color: #4299e1;
+            background-color: #ebf8ff;
+        }
+        .product-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .similar-group {
+            border-left: 4px solid #4299e1;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        }
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <i class="fas fa-chart-line text-blue-600 text-2xl mr-3"></i>
+                    <h1 class="text-2xl font-bold text-gray-900">CSV商品分析器</h1>
+                </div>
+                <div class="text-sm text-gray-500">
+                    智能图片相似度分析 & 商品归类
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Upload Section -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-upload text-blue-600 mr-2"></i>
+                上传CSV文件
+            </h2>
+            <div id="uploadArea" class="upload-area rounded-lg p-8 text-center cursor-pointer">
+                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                <p class="text-lg text-gray-600 mb-2">拖拽CSV文件到此处或点击选择文件</p>
+                <p class="text-sm text-gray-500">支持多个文件同时上传</p>
+                <input type="file" id="fileInput" multiple accept=".csv" class="hidden">
+            </div>
+            
+            <!-- Selected Files -->
+            <div id="selectedFiles" class="mt-4 hidden">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">已选择的文件:</h3>
+                <div id="fileList" class="space-y-2"></div>
+            </div>
+            
+            <!-- Upload Button -->
+            <div class="mt-6 flex justify-center">
+                <button id="uploadBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fas fa-upload mr-2"></i>
+                    开始分析
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="hidden bg-white rounded-lg shadow-sm p-8 text-center">
+            <i class="fas fa-spinner loading text-4xl text-blue-600 mb-4"></i>
+            <p class="text-lg text-gray-600">正在分析数据和图片相似度...</p>
+            <p class="text-sm text-gray-500 mt-2">这可能需要几分钟时间</p>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="hidden">
+            <!-- Summary -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-chart-bar text-green-600 mr-2"></i>
+                    分析结果概览
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-blue-50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-blue-600" id="totalProducts">0</div>
+                        <div class="text-sm text-gray-600">总商品数</div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-green-600" id="similarGroups">0</div>
+                        <div class="text-sm text-gray-600">相似商品组</div>
+                    </div>
+                    <div class="bg-yellow-50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-yellow-600" id="productsInGroups">0</div>
+                        <div class="text-sm text-gray-600">组内商品数</div>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-purple-600" id="totalSales">€0</div>
+                        <div class="text-sm text-gray-600">总销售额</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Similar Groups -->
+            <div id="similarGroupsSection" class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-layer-group text-orange-600 mr-2"></i>
+                    相似商品组 (相似度 ≥ 80%)
+                </h2>
+                <div id="similarGroupsList" class="space-y-6"></div>
+            </div>
+
+            <!-- All Products -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-list text-gray-600 mr-2"></i>
+                    所有商品
+                </h2>
+                <div id="allProductsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+        let analysisResults = null;
+
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const selectedFilesDiv = document.getElementById('selectedFiles');
+        const fileList = document.getElementById('fileList');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+
+        // File upload handling
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+        uploadBtn.addEventListener('click', uploadFiles);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files).filter(file => file.name.endsWith('.csv'));
+            updateSelectedFiles(files);
+        }
+
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            updateSelectedFiles(files);
+        }
+
+        function updateSelectedFiles(files) {
+            selectedFiles = files;
+            if (files.length > 0) {
+                selectedFilesDiv.classList.remove('hidden');
+                fileList.innerHTML = files.map(file => `
+                    <div class="flex items-center justify-between bg-gray-50 rounded p-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-csv text-green-600 mr-2"></i>
+                            <span class="text-sm font-medium">${file.name}</span>
+                        </div>
+                        <span class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</span>
+                    </div>
+                `).join('');
+                uploadBtn.disabled = false;
+            } else {
+                selectedFilesDiv.classList.add('hidden');
+                uploadBtn.disabled = true;
+            }
+        }
+
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) return;
+
+            // Show loading
+            loading.classList.remove('hidden');
+            results.classList.add('hidden');
+
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+
+            try {
+                const response = await fetch('/api/csv/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                analysisResults = data;
+                displayResults(data);
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('上传失败: ' + error.message);
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+
+        function displayResults(data) {
+            // Update summary
+            document.getElementById('totalProducts').textContent = data.total_products;
+            document.getElementById('similarGroups').textContent = data.similarity_analysis.groups_found;
+            document.getElementById('productsInGroups').textContent = data.similarity_analysis.products_in_groups;
+            
+            const totalSales = data.products.reduce((sum, product) => sum + (product.total_sales || 0), 0);
+            document.getElementById('totalSales').textContent = `€${totalSales.toFixed(2)}`;
+
+            // Display similar groups
+            displaySimilarGroups(data.similar_groups);
+
+            // Display all products
+            displayAllProducts(data.products);
+
+            // Show results
+            results.classList.remove('hidden');
+            results.classList.add('fade-in');
+        }
+
+        function displaySimilarGroups(similarGroups) {
+            const container = document.getElementById('similarGroupsList');
+            
+            if (Object.keys(similarGroups).length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-info-circle text-2xl mb-2"></i>
+                        <p>未发现相似度达到80%以上的商品组</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = Object.entries(similarGroups).map(([groupId, products], index) => `
+                <div class="similar-group rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-layer-group text-blue-600 mr-2"></i>
+                        相似商品组 ${index + 1} (${products.length} 个商品)
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        ${products.map(item => createProductCard(item.product, true)).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayAllProducts(products) {
+            const container = document.getElementById('allProductsList');
+            container.innerHTML = products.map(product => createProductCard(product, false)).join('');
+        }
+
+        function createProductCard(product, isInGroup) {
+            const priceDisplay = product.price_without_tax || '价格未知';
+            const volumeDisplay = product.volume_numeric || 1;
+            const totalSalesDisplay = product.total_sales ? `€${product.total_sales.toFixed(2)}` : '€0.00';
+            const lastSoldDisplay = product.last_sold_time || '未知';
+            
+            return `
+                <div class="product-card bg-white rounded-lg shadow-sm border p-4 ${isInGroup ? 'border-blue-200' : ''}">
+                    ${product.image_url ? `
+                        <div class="aspect-w-16 aspect-h-9 mb-3">
+                            <img src="${product.image_url}" alt="${product.title}" 
+                                 class="w-full h-32 object-cover rounded-lg"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center hidden">
+                                <i class="fas fa-image text-gray-400 text-2xl"></i>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
+                            <i class="fas fa-image text-gray-400 text-2xl"></i>
+                        </div>
+                    `}
+                    
+                    <h4 class="font-medium text-gray-900 mb-2 line-clamp-2">
+                        ${product.product_url ? `
+                            <a href="${product.product_url}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                ${product.title || '无标题'}
+                            </a>
+                        ` : (product.title || '无标题')}
+                    </h4>
+                    
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">不含税价:</span>
+                            <span class="font-medium">${priceDisplay}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">售出量:</span>
+                            <span class="font-medium">${volumeDisplay}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">总销售额:</span>
+                            <span class="font-medium text-green-600">${totalSalesDisplay}</span>
+                        </div>
+                        ${lastSoldDisplay !== '未知' ? `
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">最近售出:</span>
+                                <span class="font-medium">${lastSoldDisplay}</span>
+                            </div>
+                        ` : ''}
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">来源文件:</span>
+                            <span class="text-xs text-gray-500">${product.source_file || '未知'}</span>
+                        </div>
+                    </div>
+                    
+                    ${isInGroup ? `
+                        <div class="mt-3 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full text-center">
+                            <i class="fas fa-layer-group mr-1"></i>
+                            相似商品组
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
+
