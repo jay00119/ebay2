@@ -7,9 +7,10 @@ from flask import Blueprint, request, jsonify
 from flask_cors import cross_origin
 import tempfile
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 
 csv_analyzer_bp = Blueprint('csv_analyzer', __name__)
-
 def download_image(url, timeout=10):
     """下载图片并返回PIL Image对象"""
     try:
@@ -71,49 +72,56 @@ def parse_csv_data(csv_content, filename):
         csv_reader = csv.DictReader(io.StringIO(csv_content))
         products = []
         
-        for row in csv_reader:
-            # 解析数据
-            product = {
-                'image_url': row.get('small src', '').strip(),
-                'product_url': row.get('research-table-row__link-row-anchor href', '').strip(),
-                'title': row.get('research-table-row__link-row-anchor', '').strip(),
-                'price_without_tax': row.get('research-table-row__item-with-subtitle', '').strip(),
-                'sales_volume': row.get('research-table-row__inner-item', '1').strip(),
-                'last_sold_time': row.get('research-table-row__inner-item (4)', '').strip(),
-                'source_file': filename
-            }
-            
-            # 处理缺失数据
-            if not product['sales_volume'] or product['sales_volume'] == '':
-                product['sales_volume'] = '1'
-            
-            # 计算总销售额
-            price = parse_price(product['price_without_tax'])
-            volume = int(product['sales_volume']) if product['sales_volume'].isdigit() else 1
-            product['total_sales'] = price * volume
-            product['price_numeric'] = price
-            product['volume_numeric'] = volume
-            
-            products.append(product)
+        for i, row in enumerate(csv_reader):
+            try:
+                # 解析数据
+                product = {
+                    'image_url': row.get('small src', '').strip(),
+                    'product_url': row.get('research-table-row__link-row-anchor href', '').strip(),
+                    'title': row.get('research-table-row__link-row-anchor', '').strip(),
+                    'price_without_tax': row.get('research-table-row__item-with-subtitle', '').strip(),
+                    'sales_volume': row.get('research-table-row__inner-item', '1').strip(),
+                    'last_sold_time': row.get('research-table-row__inner-item (4)', '').strip(),
+                    'source_file': filename
+                }
+                
+                # 处理缺失数据
+                if not product['sales_volume'] or product['sales_volume'] == '':
+                    product['sales_volume'] = '1'
+                
+                # 计算总销售额
+                price = parse_price(product['price_without_tax'])
+                volume = int(product['sales_volume']) if product['sales_volume'].isdigit() else 1
+                product['total_sales'] = price * volume
+                product['price_numeric'] = price
+                product['volume_numeric'] = volume
+                
+                products.append(product)
+            except Exception as e:
+                print(f"解析CSV文件 {filename} 的第 {i+2} 行失败: {str(e)}") # +2 for header and 0-indexed loop
         
         return products
     except Exception as e:
-        print(f"解析CSV失败: {str(e)}")
+        print(f"解析CSV文件 {filename} 失败: {str(e)}")
         return []
-
 def find_similar_products_simple(products, similarity_threshold=0.8):
     """找到相似的商品（简化版）"""
     # 下载所有图片
     images = {}
     valid_products = []
     
-    for i, product in enumerate(products):
-        if product['image_url']:
-            image = download_image(product['image_url'])
-            if image:
-                images[i] = image
-                valid_products.append((i, product))
-    
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_product = {executor.submit(download_image, product["image_url"]): (i, product) for i, product in enumerate(products) if product["image_url"]}
+        for future in concurrent.futures.as_completed(future_to_product):
+            idx, product = future_to_product[future]
+            try:
+                image = future.result()
+                if image:
+                    images[idx] = image
+                    valid_products.append((idx, product))
+            except Exception as exc:
+                print(f"图片下载生成异常: {exc}")
+
     # 简单的相似度比较
     similar_groups = {}
     group_id = 0
@@ -133,7 +141,7 @@ def find_similar_products_simple(products, similarity_threshold=0.8):
             if idx1 in images and idx2 in images:
                 similarity = simple_image_similarity(images[idx1], images[idx2])
                 if similarity >= similarity_threshold:
-                    current_group.append({'product': product2, 'index': idx2})
+                    current_group.append({"product": product2, "index": idx2})
                     processed.add(idx2)
         
         if len(current_group) > 1:
@@ -142,7 +150,7 @@ def find_similar_products_simple(products, similarity_threshold=0.8):
     
     return similar_groups, [], []
 
-@csv_analyzer_bp.route('/upload', methods=['POST'])
+@csv_analyzer_bp.route("/upload", methods=["POST"])
 @cross_origin()
 def upload_csv():
     """处理CSV文件上传"""

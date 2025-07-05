@@ -699,91 +699,173 @@
             
             profitResult.classList.remove('hidden');
         }
-
         async function uploadFiles() {
             if (selectedFiles.length === 0) return;
 
             // Show loading
-            loading.classList.remove('hidden');
-            results.classList.add('hidden');
+            loading.classList.remove("hidden");
+            results.classList.add("hidden");
 
-            // Simulate analysis delay
-            setTimeout(() => {
-                loading.classList.add('hidden');
-                results.classList.remove('hidden');
-                results.classList.add('fade-in');
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append("files", file);
+            });
+
+            try {
+                const response = await fetch("/api/csv/upload", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                analysisResults = await response.json();
+                console.log("Analysis Results:", analysisResults);
+
+                // Update summary stats
+                document.getElementById("totalProducts").textContent = analysisResults.total_products;
+                document.getElementById("similarGroups").textContent = analysisResults.similarity_analysis.groups_found;
                 
-                // Populate ungrouped products
-                populateUngroupedProducts();
-            }, 2000);
+                // Calculate total sales and volume from analysisResults.products
+                let totalSales = 0;
+                let totalVolume = 0;
+                analysisResults.products.forEach(product => {
+                    totalSales += product.total_sales;
+                    totalVolume += product.volume_numeric;
+                });
+                document.getElementById("totalSales").textContent = `€${totalSales.toFixed(2)}`;
+                document.getElementById("totalVolume").textContent = totalVolume;
+
+                // Populate similar groups and ungrouped products
+                populateSimilarGroups(analysisResults.similar_groups);
+                populateUngroupedProducts(analysisResults.products);
+
+                loading.classList.add("hidden");
+                results.classList.remove("hidden");
+                results.classList.add("fade-in");
+
+            } catch (error) {
+                console.error("Error uploading files:", error);
+                alert("文件上传或分析失败: " + error.message);
+                loading.classList.add("hidden");
+            }
         }
 
-        function populateUngroupedProducts() {
-            const sampleProducts = [
-                {
-                    image: 'https://i.ebayimg.com/images/g/mE8AAOSwr-xjBXck/s-l1200.jpg',
-                    title: 'Anlasser Starter 1,1 KW für Ford B-Max Fiesta Focus 2 3 Fusion Mondeo 4 1.4 1.6L',
-                    price: '€56.87',
-                    volume: '0',
-                    total: '€100.00',
-                    lastSold: '10',
-                    itemId: '255691512640'
-                },
-                {
-                    image: 'https://i.ebayimg.com/images/g/0A8AAOSwLCRoIt~G/s-l1200.jpg',
-                    title: 'Anlasser Starter 2.2KW für Mercedes-Benz W124 W201-W203 E-Klasse Audi Ssangyong',
-                    price: '€65.68',
-                    volume: '0',
-                    total: '€100.00',
-                    lastSold: '9',
-                    itemId: '255885932149'
-                },
-                {
-                    image: 'https://i.ebayimg.com/images/g/Z3YAAOSw6cVj7L9U/s-l1200.jpg',
-                    title: 'STARTER ANLASSER FÜR PEUGEOT 206 1.1 1.4 1.6 + 16V HDI 110 BJ 01-10',
-                    price: '€48.76',
-                    volume: '12',
-                    total: '€89.00',
-                    lastSold: '9',
-                    itemId: '392127449722'
-                },
-                {
-                    image: 'https://i.ebayimg.com/images/g/KMMAAOSwOZBlex63/s-l1200.jpg',
-                    title: 'Anlasser Starter 1,1 KW für BMW Motorrad R 1200 GS Adventure LC 2014-2018',
-                    price: '€51.82',
-                    volume: '22',
-                    total: '€88.00',
-                    lastSold: '8',
-                    itemId: '266000985078'
-                }
-            ];
+        function populateSimilarGroups(similarGroups) {
+            const groupsListContainer = document.getElementById("groupsList");
+            groupsListContainer.innerHTML = ""; // Clear existing groups
+            const similarGroupsDetailContainer = document.getElementById("similarGroupsDetail");
+            similarGroupsDetailContainer.innerHTML = ""; // Clear existing detailed groups
 
-            const container = document.getElementById('ungroupedProductsList');
-            container.innerHTML = sampleProducts.map(product => `
+            let groupCount = 0;
+            for (const groupId in similarGroups) {
+                groupCount++;
+                const group = similarGroups[groupId];
+                const groupItem = document.createElement("div");
+                groupItem.className = "group-item rounded-lg p-3";
+                groupItem.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="font-medium text-gray-900">组 ${groupCount}</div>
+                            <div class="text-sm text-gray-600">${group.length} 个商品</div>
+                        </div>
+                        <button class="copy-group-btn" onclick="copyGroupItemIds(${groupId})">
+                            <i class="fas fa-copy mr-1"></i>一键复制
+                        </button>
+                    </div>
+                `;
+                groupsListContainer.appendChild(groupItem);
+
+                const detailedGroup = document.createElement("div");
+                detailedGroup.id = `group-${groupId}`;
+                detailedGroup.className = "similar-group rounded-lg p-6 mb-6";
+                detailedGroup.innerHTML = `
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        组 ${groupCount} - ${group.length} 个相似商品
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">这些商品被识别为相似商品，请根据图片、价格等因素人工判断选品。</p>
+                    <div class="product-grid">
+                        ${group.map(item => `
+                            <div class="product-item">
+                                <img src="${item.product.image_url}" alt="${item.product.title}" class="product-image" onerror="this.style.display=\'none\'">
+                                <div class="product-info">
+                                    <a href="${item.product.product_url}" target="_blank" class="product-title">${item.product.title}</a>
+                                    <div class="product-details">
+                                        <div class="detail-item">
+                                            <span class="detail-label">税前价:</span>
+                                            <span class="detail-value price-value">€${item.product.price_numeric.toFixed(2)}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">销量:</span>
+                                            <span class="detail-value">${item.product.volume_numeric}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">总额:</span>
+                                            <span class="detail-value price-value">€${item.product.total_sales.toFixed(2)}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">最近售出:</span>
+                                            <span class="detail-value volume-value">${item.product.last_sold_time || 'N/A'}</span>
+                                        </div>
+                                        <div class="detail-item" style="grid-column: 1 / -1;">
+                                            <span class="detail-label">Item ID:</span>
+                                            <span class="detail-value text-purple-600">${extractItemId(item.product.product_url) || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                similarGroupsDetailContainer.appendChild(detailedGroup);
+            }
+            document.getElementById("groupsCount").textContent = groupCount;
+            document.getElementById("similarCount").textContent = groupCount;
+        }
+
+        function populateUngroupedProducts(allProducts) {
+            const ungroupedProductsListContainer = document.getElementById("ungroupedProductsList");
+            ungroupedProductsListContainer.innerHTML = ""; // Clear existing products
+
+            const groupedItemIds = new Set();
+            if (analysisResults && analysisResults.similar_groups) {
+                for (const groupId in analysisResults.similar_groups) {
+                    analysisResults.similar_groups[groupId].forEach(item => {
+                        groupedItemIds.add(extractItemId(item.product.product_url));
+                    });
+                }
+            }
+
+            const ungroupedProducts = allProducts.filter(product => !groupedItemIds.has(extractItemId(product.product_url)));
+            document.getElementById("ungroupedCount").textContent = ungroupedProducts.length;
+
+            ungroupedProductsListContainer.innerHTML = ungroupedProducts.map(product => `
                 <div class="product-item">
-                    <img src="${product.image}" alt="${product.title}" class="product-image" onerror="this.style.display='none'">
+                    <img src="${product.image_url}" alt="${product.title}" class="product-image" onerror="this.style.display=\'none\'">
                     <div class="product-info">
-                        <a href="#" class="product-title">${product.title}</a>
+                        <a href="${product.product_url}" target="_blank" class="product-title">${product.title}</a>
                         <div class="product-details">
                             <div class="detail-item">
                                 <span class="detail-label">税前价:</span>
-                                <span class="detail-value price-value">${product.price}</span>
+                                <span class="detail-value price-value">€${product.price_numeric.toFixed(2)}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">销量:</span>
-                                <span class="detail-value">${product.volume}</span>
+                                <span class="detail-value">${product.volume_numeric}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">总额:</span>
-                                <span class="detail-value price-value">${product.total}</span>
+                                <span class="detail-value price-value">€${product.total_sales.toFixed(2)}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">最近售出:</span>
-                                <span class="detail-value volume-value">${product.lastSold}</span>
+                                <span class="detail-value volume-value">${product.last_sold_time || 'N/A'}</span>
                             </div>
                             <div class="detail-item" style="grid-column: 1 / -1;">
                                 <span class="detail-label">Item ID:</span>
-                                <span class="detail-value text-purple-600">${product.itemId}</span>
+                                <span class="detail-value text-purple-600">${extractItemId(product.product_url) || 'N/A'}</span>
                             </div>
                         </div>
                     </div>
@@ -798,36 +880,22 @@
         }
 
         // 复制组内所有商品的Item ID
-        function copyGroupItemIds(groupNumber) {
-            // 模拟数据 - 在实际应用中，这些数据应该从后端获取
-            const groupData = {
-                1: [
-                    { itemId: '282639537944', url: 'https://www.ebay.de/itm/282639537944' },
-                    { itemId: '335699560402', url: 'https://www.ebay.de/itm/335699560402' }
-                ],
-                2: [
-                    { itemId: '255691512640', url: 'https://www.ebay.de/itm/255691512640' },
-                    { itemId: '255885932149', url: 'https://www.ebay.de/itm/255885932149' }
-                ]
-            };
-
-            const items = groupData[groupNumber] || [];
-            const itemIds = items.map(item => item.itemId).join('\n');
+        function copyGroupItemIds(groupId) {
+            const group = analysisResults.similar_groups[groupId];
+            if (!group) return;
+            const itemIds = group.map(item => extractItemId(item.product.product_url)).filter(id => id !== null).join('\n');
             
-            // 复制到剪贴板
             navigator.clipboard.writeText(itemIds).then(() => {
-                // 显示成功提示
-                showCopySuccess(groupNumber, items.length);
+                showCopySuccess(groupId, group.length);
             }).catch(err => {
                 console.error('复制失败:', err);
-                // 降级方案：使用传统方法
                 const textArea = document.createElement('textarea');
                 textArea.value = itemIds;
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                showCopySuccess(groupNumber, items.length);
+                showCopySuccess(groupId, group.length);
             });
         }
 
@@ -836,7 +904,8 @@
             const button = document.querySelector(`button[onclick="copyGroupItemIds(${groupNumber})"]`);
             const originalText = button.innerHTML;
             
-            button.innerHTML = '<i class="fas fa-check mr-1"></i>已复制';
+            button.innerHTML = 
+                `<i class="fas fa-check mr-1"></i>已复制`;
             button.style.background = '#10b981';
             
             setTimeout(() => {
@@ -847,26 +916,31 @@
             // 可选：显示更详细的提示
             console.log(`已复制组 ${groupNumber} 的 ${count} 个商品 Item ID`);
         }
+        document.querySelector('#ungroupedContent .copy-btn').addEventListener('click', () => {
+            const ungroupedProductsListContainer = document.getElementById("ungroupedProductsList");
+            const ungroupedProductElements = Array.from(ungroupedProductsListContainer.children);
+            const itemIds = ungroupedProductElements.map(el => {
+                const itemIdSpan = el.querySelector('.product-details .detail-item:last-child .detail-value');
+                return itemIdSpan ? itemIdSpan.textContent : null;
+            }).filter(id => id !== null && id !== 'N/A').join('\n');
 
-        function scrollToGroup(groupNumber) {
-            const element = document.getElementById(`group-${groupNumber}`);
-            if (element) {
-                // Switch to similar tab first
-                switchTab('similar');
-                // Scroll to the group
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                // Highlight the group briefly
-                element.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)';
-                setTimeout(() => {
-                    element.style.boxShadow = '';
-                }, 2000);
-            }
-        }
+            navigator.clipboard.writeText(itemIds).then(() => {
+                alert('所有未分组商品 Item ID 已复制！');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                const textArea = document.createElement('textarea');
+                textArea.value = itemIds;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('所有未分组商品 Item ID 已复制！');
+            });
+        });
 
         // 初始状态隐藏结果区域，只有上传文件后才显示
-        // results.classList.remove('hidden');
-        // populateUngroupedProducts();
-    </script>
+        // results.classList.remove("hidden");
+        // populateUngroupedProducts();    </script>
 </body>
 </html>
 
