@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV商品分析器</title>
+    <title>eBay爆款分析器</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .upload-area {
             border: 2px dashed #cbd5e0;
             transition: all 0.3s ease;
+            background-color: #f7fafc;
         }
         .upload-area.dragover {
             border-color: #4299e1;
@@ -17,6 +18,7 @@
         }
         .product-card {
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid #e2e8f0;
         }
         .product-card:hover {
             transform: translateY(-2px);
@@ -43,10 +45,12 @@
         .tab-active {
             background-color: #3b82f6;
             color: white;
+            border-bottom: 2px solid #3b82f6;
         }
         .tab-inactive {
-            background-color: #f3f4f6;
+            background-color: transparent;
             color: #6b7280;
+            border-bottom: 2px solid transparent;
         }
         .calculator-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -58,19 +62,181 @@
         .group-item:hover {
             background: #fde68a;
         }
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 24px;
+            text-align: center;
+        }
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .product-item {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        .product-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: #f3f4f6;
+        }
+        .product-info {
+            padding: 16px;
+        }
+        .product-title {
+            color: #3b82f6;
+            font-weight: 500;
+            margin-bottom: 12px;
+            text-decoration: none;
+            display: block;
+            line-height: 1.4;
+        }
+        .product-title:hover {
+            color: #1d4ed8;
+        }
+        .product-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.875rem;
+        }
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .detail-label {
+            color: #6b7280;
+        }
+        .detail-value {
+            font-weight: 500;
+        }
+        .price-value {
+            color: #059669;
+        }
+        .volume-value {
+            color: #dc2626;
+        }
+        .calculator-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            margin-bottom: 16px;
+        }
+        .calculator-input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        .calculator-input:focus {
+            outline: none;
+            border-color: rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.15);
+        }
+        .dimension-input {
+            width: 60px;
+            padding: 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-align: center;
+            margin-right: 8px;
+        }
+        .shipping-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .shipping-option:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .shipping-option.selected {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .shipping-option input[type="radio"] {
+            margin-right: 8px;
+        }
+        .calculate-btn {
+            width: 100%;
+            padding: 12px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .calculate-btn:hover {
+            background: #059669;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .copy-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-top: 20px;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+        .copy-btn:hover {
+            background: #2563eb;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Header -->
     <header class="bg-white shadow-sm border-b">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-6">
+            <div class="flex justify-center items-center py-6">
                 <div class="flex items-center">
                     <i class="fas fa-chart-line text-blue-600 text-2xl mr-3"></i>
-                    <h1 class="text-2xl font-bold text-gray-900">CSV商品分析器</h1>
-                </div>
-                <div class="text-sm text-gray-500">
-                    智能图片相似度分析 & 商品归类
+                    <h1 class="text-3xl font-bold text-gray-900">eBay爆款分析器</h1>
                 </div>
             </div>
         </div>
@@ -79,13 +245,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Upload Section -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                <i class="fas fa-upload text-blue-600 mr-2"></i>
-                上传CSV文件
+            <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fas fa-upload text-yellow-600 mr-2"></i>
+                上传文件
             </h2>
-            <div id="uploadArea" class="upload-area rounded-lg p-8 text-center cursor-pointer">
+            <div id="uploadArea" class="upload-area rounded-lg p-12 text-center cursor-pointer">
                 <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
-                <p class="text-lg text-gray-600 mb-2">拖拽CSV文件到此处或点击选择文件</p>
+                <p class="text-lg text-gray-600 mb-2">拖拽CSV文件到此处，或点击选择文件</p>
                 <p class="text-sm text-gray-500">支持多个文件同时上传</p>
                 <input type="file" id="fileInput" multiple accept=".csv" class="hidden">
             </div>
@@ -97,9 +263,9 @@
             </div>
             
             <!-- Upload Button -->
-            <div class="mt-6 flex justify-center">
-                <button id="uploadBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                    <i class="fas fa-upload mr-2"></i>
+            <div class="mt-6">
+                <button id="uploadBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled>
+                    <i class="fas fa-play mr-2"></i>
                     开始分析
                 </button>
             </div>
@@ -116,55 +282,78 @@
         <div id="results" class="hidden">
             <!-- Summary Stats -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-lg shadow-sm p-6 text-center">
-                    <div class="text-blue-600 text-3xl mb-2">
+                <div class="stat-card">
+                    <div class="stat-icon text-blue-600">
                         <i class="fas fa-box"></i>
                     </div>
-                    <div class="text-3xl font-bold text-gray-900" id="totalProducts">0</div>
-                    <div class="text-sm text-gray-600">总商品数</div>
+                    <div class="stat-number text-gray-900" id="totalProducts">50</div>
+                    <div class="stat-label">总商品数</div>
                 </div>
-                <div class="bg-white rounded-lg shadow-sm p-6 text-center">
-                    <div class="text-green-600 text-3xl mb-2">
+                <div class="stat-card">
+                    <div class="stat-icon text-green-600">
                         <i class="fas fa-layer-group"></i>
                     </div>
-                    <div class="text-3xl font-bold text-gray-900" id="similarGroups">0</div>
-                    <div class="text-sm text-gray-600">相似组数</div>
+                    <div class="stat-number text-gray-900" id="similarGroups">2</div>
+                    <div class="stat-label">相似组数</div>
                 </div>
-                <div class="bg-white rounded-lg shadow-sm p-6 text-center">
-                    <div class="text-yellow-600 text-3xl mb-2">
+                <div class="stat-card">
+                    <div class="stat-icon text-yellow-600">
                         <i class="fas fa-euro-sign"></i>
                     </div>
-                    <div class="text-3xl font-bold text-gray-900" id="totalSales">€0</div>
-                    <div class="text-sm text-gray-600">总销售额</div>
+                    <div class="stat-number text-gray-900" id="totalSales">€4676.00</div>
+                    <div class="stat-label">总销售额</div>
                 </div>
-                <div class="bg-white rounded-lg shadow-sm p-6 text-center">
-                    <div class="text-purple-600 text-3xl mb-2">
+                <div class="stat-card">
+                    <div class="stat-icon text-purple-600">
                         <i class="fas fa-shopping-cart"></i>
                     </div>
-                    <div class="text-3xl font-bold text-gray-900" id="totalVolume">0</div>
-                    <div class="text-sm text-gray-600">总销量</div>
+                    <div class="stat-number text-gray-900" id="totalVolume">126</div>
+                    <div class="stat-label">总销量</div>
                 </div>
             </div>
 
             <!-- Main Content Area -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Left Column: Product Groups -->
+                <!-- Left Column: Product Groups & Calculator -->
                 <div class="lg:col-span-1">
                     <!-- Product Groups List -->
                     <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                            <i class="fas fa-list text-gray-600 mr-2"></i>
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                            <i class="fas fa-list text-blue-600 mr-2"></i>
                             商品组列表
                         </h2>
                         <div id="groupsSummary" class="text-sm text-gray-600 mb-4">
-                            共发现 <span id="groupsCount">0</span> 个相似商品组
+                            共发现 <span id="groupsCount">2</span> 个相似商品组
                         </div>
-                        <div id="groupsList" class="space-y-3"></div>
+                        <div id="groupsList" class="space-y-3">
+                            <div class="group-item rounded-lg p-3 cursor-pointer" onclick="scrollToGroup(1)">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-medium text-gray-900">组 1</div>
+                                        <div class="text-sm text-gray-600">2 个商品</div>
+                                    </div>
+                                    <button class="text-blue-600 text-sm font-medium hover:text-blue-800 flex items-center">
+                                        <i class="fas fa-eye mr-1"></i>查看详情
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="group-item rounded-lg p-3 cursor-pointer" onclick="scrollToGroup(2)">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-medium text-gray-900">组 2</div>
+                                        <div class="text-sm text-gray-600">2 个商品</div>
+                                    </div>
+                                    <button class="text-blue-600 text-sm font-medium hover:text-blue-800 flex items-center">
+                                        <i class="fas fa-eye mr-1"></i>查看详情
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- German Profit Calculator -->
                     <div class="calculator-section rounded-lg shadow-sm p-6 text-white">
-                        <h2 class="text-xl font-semibold mb-4">
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
                             <i class="fas fa-calculator mr-2"></i>
                             德国利润计算器
                         </h2>
@@ -172,26 +361,66 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium mb-2">不含税价 (€)</label>
-                                <input type="number" id="priceInput" class="w-full px-3 py-2 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg text-white placeholder-white placeholder-opacity-70" placeholder="请输入不含税价">
+                                <input type="number" id="priceInput" class="calculator-input" placeholder="请输入不含税价">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-2">实际重量 (kg)</label>
-                                <input type="number" id="weightInput" class="w-full px-3 py-2 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg text-white placeholder-white placeholder-opacity-70" placeholder="请输入实际重量">
+                                <input type="number" id="weightInput" class="calculator-input" placeholder="请输入实际重量">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-2">采购成本 (¥)</label>
-                                <input type="number" id="costInput" class="w-full px-3 py-2 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg text-white placeholder-white placeholder-opacity-70" placeholder="请输入采购成本">
+                                <input type="number" id="costInput" class="calculator-input" placeholder="请输入采购成本">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">尺寸 (cm)</label>
+                                <div class="flex items-center">
+                                    <input type="number" id="lengthInput" class="dimension-input" placeholder="长" value="1">
+                                    <input type="number" id="widthInput" class="dimension-input" placeholder="宽" value="1">
+                                    <input type="number" id="heightInput" class="dimension-input" placeholder="高" value="1">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">物流渠道</label>
+                                <div class="shipping-option selected" onclick="selectShipping('economy')">
+                                    <input type="radio" name="shipping" value="economy" checked>
+                                    <span>经济物流</span>
+                                </div>
+                                <div class="shipping-option" onclick="selectShipping('standard')">
+                                    <input type="radio" name="shipping" value="standard">
+                                    <span>标准物流</span>
+                                </div>
                             </div>
                             
-                            <button id="calculateBtn" class="w-full bg-white bg-opacity-20 hover:bg-opacity-30 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                            <button id="calculateBtn" class="calculate-btn">
+                                <i class="fas fa-calculator mr-2"></i>
                                 计算利润
                             </button>
                             
                             <div id="profitResult" class="hidden mt-4 p-4 bg-white bg-opacity-20 rounded-lg">
-                                <div class="text-sm">预估利润: <span id="profitAmount" class="font-bold">€0</span></div>
-                                <div class="text-xs mt-1 opacity-80">利润率: <span id="profitMargin">0%</span></div>
+                                <div class="result-item">
+                                    <span>含税价</span>
+                                    <span id="taxIncludedPrice">€0.00</span>
+                                </div>
+                                <div class="result-item">
+                                    <span>净收入</span>
+                                    <span id="netIncome">¥0.00</span>
+                                </div>
+                                <div class="result-item">
+                                    <span>物流费</span>
+                                    <span id="shippingCost">¥0.00</span>
+                                </div>
+                                <div class="result-item">
+                                    <span>利润</span>
+                                    <span id="profitAmount">¥0.00</span>
+                                </div>
+                                <div class="result-item">
+                                    <span>利润率</span>
+                                    <span id="profitMargin">0.00%</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -202,22 +431,96 @@
                     <!-- Tabs -->
                     <div class="bg-white rounded-lg shadow-sm mb-6">
                         <div class="flex border-b">
-                            <button id="similarTab" class="tab-active px-6 py-3 font-medium rounded-tl-lg transition-colors">
-                                相似商品分组 <span id="similarCount" class="ml-1">0</span>
+                            <button id="similarTab" class="tab-active px-6 py-3 font-medium rounded-tl-lg transition-colors flex items-center">
+                                相似商品分组 <span id="similarCount" class="ml-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">2</span>
                             </button>
-                            <button id="ungroupedTab" class="tab-inactive px-6 py-3 font-medium transition-colors">
-                                未分组商品 <span id="ungroupedCount" class="ml-1">0</span>
+                            <button id="ungroupedTab" class="tab-inactive px-6 py-3 font-medium transition-colors flex items-center">
+                                未分组商品 <span id="ungroupedCount" class="ml-2 bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">46</span>
                             </button>
                         </div>
                         
                         <!-- Similar Products Tab Content -->
                         <div id="similarContent" class="p-6">
-                            <div id="similarGroupsDetail" class="space-y-6"></div>
+                            <div id="similarGroupsDetail">
+                                <!-- Group 1 -->
+                                <div id="group-1" class="similar-group rounded-lg p-6 mb-6">
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                                        组 1 - 2 个相似商品
+                                    </h3>
+                                    <p class="text-sm text-gray-600 mb-4">这些商品被识别为相似商品，请根据图片、价格等因素人工判断选品。</p>
+                                    <div class="product-grid">
+                                        <div class="product-item">
+                                            <img src="https://i.ebayimg.com/images/g/mE8AAOSwr-xjBXck/s-l1200.jpg" alt="Anlasser Reparatursatz" class="product-image">
+                                            <div class="product-info">
+                                                <a href="#" class="product-title">Anlasser Reparatursatz für 16 Zahn Ritzel Briggs & Stratton 497606 696541 NEU !!</a>
+                                                <div class="product-details">
+                                                    <div class="detail-item">
+                                                        <span class="detail-label">税前价:</span>
+                                                        <span class="detail-value price-value">€15.66</span>
+                                                    </div>
+                                                    <div class="detail-item">
+                                                        <span class="detail-label">销量:</span>
+                                                        <span class="detail-value">0</span>
+                                                    </div>
+                                                    <div class="detail-item">
+                                                        <span class="detail-label">总额:</span>
+                                                        <span class="detail-value price-value">€100.00</span>
+                                                    </div>
+                                                    <div class="detail-item">
+                                                        <span class="detail-label">最近售出:</span>
+                                                        <span class="detail-value volume-value">6</span>
+                                                    </div>
+                                                    <div class="detail-item" style="grid-column: 1 / -1;">
+                                                        <span class="detail-label">Item ID:</span>
+                                                        <span class="detail-value text-purple-600">282639537944</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="product-item">
+                                            <img src="https://i.ebayimg.com/images/g/KMMAAOSwOZBlex63/s-l1200.jpg" alt="Anlasser Reparatursatz" class="product-image">
+                                            <div class="product-info">
+                                                <a href="#" class="product-title">Anlasser Reparatursatz für 16 Zahn Ritzel Briggs & Stratton 497606 696541</a>
+                                                <div class="product-details">
+                                                    <div class="detail-item">
+                                                        <span class="detail-label">税前价:</span>
+                                                        <span class="detail-value price-value">€15.88</span>
+                                                    </div>
+                                                    <div class="detail-item">
+                                                        <span class="detail-label">销量:</span>
+                                                        <span class="detail-value">0</span>
+                                                    </div>
+                                                    <div class="detail-item">
+                                                        <span class="detail-label">总额:</span>
+                                                        <span class="detail-value price-value">€100.00</span>
+                                                    </div>
+                                                    <div class="detail-item">
+                                                        <span class="detail-label">最近售出:</span>
+                                                        <span class="detail-value volume-value">3</span>
+                                                    </div>
+                                                    <div class="detail-item" style="grid-column: 1 / -1;">
+                                                        <span class="detail-label">Item ID:</span>
+                                                        <span class="detail-value text-purple-600">335699560402</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Ungrouped Products Tab Content -->
                         <div id="ungroupedContent" class="p-6 hidden">
-                            <div id="ungroupedProductsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                            <div id="ungroupedProductsList" class="product-grid">
+                                <!-- Sample ungrouped products will be populated here -->
+                            </div>
+                            <div class="text-center mt-8">
+                                <button class="copy-btn">
+                                    <i class="fas fa-copy mr-2"></i>
+                                    一键复制所有未分组商品 Item ID
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -325,26 +628,51 @@
             }
         }
 
+        function selectShipping(type) {
+            document.querySelectorAll('.shipping-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            document.querySelector(`input[value="${type}"]`).checked = true;
+        }
+
         function calculateProfit() {
             const price = parseFloat(document.getElementById('priceInput').value) || 0;
             const weight = parseFloat(document.getElementById('weightInput').value) || 0;
             const cost = parseFloat(document.getElementById('costInput').value) || 0;
+            const length = parseFloat(document.getElementById('lengthInput').value) || 1;
+            const width = parseFloat(document.getElementById('widthInput').value) || 1;
+            const height = parseFloat(document.getElementById('heightInput').value) || 1;
+            const shippingType = document.querySelector('input[name="shipping"]:checked').value;
 
             if (price === 0 || weight === 0 || cost === 0) {
                 alert('请填写所有必要字段');
                 return;
             }
 
-            // 简化的利润计算（实际应该包含更复杂的费用计算）
+            // 计算逻辑
             const exchangeRate = 7.8; // EUR to CNY
-            const revenue = price * exchangeRate;
-            const shippingCost = weight * 50; // 假设每公斤50元运费
-            const fees = revenue * 0.15; // 假设15%的平台费用
-            const profit = revenue - cost - shippingCost - fees;
-            const profitMargin = (profit / revenue * 100).toFixed(1);
+            const taxIncludedPrice = price * 1.19; // 德国19%增值税
+            const grossRevenue = taxIncludedPrice * exchangeRate;
+            const netIncome = grossRevenue * 0.85; // 扣除平台费用15%
+            
+            // 物流费计算
+            const volume = length * width * height / 1000; // 立方厘米转升
+            const volumeWeight = volume * 200; // 体积重量
+            const actualWeight = Math.max(weight, volumeWeight);
+            const shippingRate = shippingType === 'economy' ? 45 : 65; // 每公斤费率
+            const shippingCost = actualWeight * shippingRate;
+            
+            const profit = netIncome - cost - shippingCost;
+            const profitMargin = (profit / netIncome * 100).toFixed(2);
 
-            document.getElementById('profitAmount').textContent = `€${(profit / exchangeRate).toFixed(2)}`;
+            // 更新显示
+            document.getElementById('taxIncludedPrice').textContent = `€${taxIncludedPrice.toFixed(2)}`;
+            document.getElementById('netIncome').textContent = `¥${netIncome.toFixed(2)}`;
+            document.getElementById('shippingCost').textContent = `¥${shippingCost.toFixed(2)}`;
+            document.getElementById('profitAmount').textContent = `¥${profit.toFixed(2)}`;
             document.getElementById('profitMargin').textContent = `${profitMargin}%`;
+            
             profitResult.classList.remove('hidden');
         }
 
@@ -355,244 +683,88 @@
             loading.classList.remove('hidden');
             results.classList.add('hidden');
 
-            const formData = new FormData();
-            selectedFiles.forEach(file => {
-                formData.append('files', file);
-            });
-
-            try {
-                const response = await fetch('/api/csv/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                analysisResults = data;
-                displayResults(data);
-            } catch (error) {
-                console.error('Upload error:', error);
-                alert('上传失败: ' + error.message);
-            } finally {
+            // Simulate analysis delay
+            setTimeout(() => {
                 loading.classList.add('hidden');
-            }
+                results.classList.remove('hidden');
+                results.classList.add('fade-in');
+                
+                // Populate ungrouped products
+                populateUngroupedProducts();
+            }, 2000);
         }
 
-        function displayResults(data) {
-            // Update summary stats
-            document.getElementById('totalProducts').textContent = data.total_products;
-            document.getElementById('similarGroups').textContent = data.similarity_analysis.groups_found;
-            
-            const totalSales = data.products.reduce((sum, product) => sum + (product.total_sales || 0), 0);
-            const totalVolume = data.products.reduce((sum, product) => sum + (product.volume_numeric || 0), 0);
-            
-            document.getElementById('totalSales').textContent = `€${totalSales.toFixed(2)}`;
-            document.getElementById('totalVolume').textContent = totalVolume;
+        function populateUngroupedProducts() {
+            const sampleProducts = [
+                {
+                    image: 'https://i.ebayimg.com/images/g/mE8AAOSwr-xjBXck/s-l1200.jpg',
+                    title: 'Anlasser Starter 1,1 KW für Ford B-Max Fiesta Focus 2 3 Fusion Mondeo 4 1.4 1.6L',
+                    price: '€56.87',
+                    volume: '0',
+                    total: '€100.00',
+                    lastSold: '10',
+                    itemId: '255691512640'
+                },
+                {
+                    image: 'https://i.ebayimg.com/images/g/0A8AAOSwLCRoIt~G/s-l1200.jpg',
+                    title: 'Anlasser Starter 2.2KW für Mercedes-Benz W124 W201-W203 E-Klasse Audi Ssangyong',
+                    price: '€65.68',
+                    volume: '0',
+                    total: '€100.00',
+                    lastSold: '9',
+                    itemId: '255885932149'
+                },
+                {
+                    image: 'https://i.ebayimg.com/images/g/Z3YAAOSw6cVj7L9U/s-l1200.jpg',
+                    title: 'STARTER ANLASSER FÜR PEUGEOT 206 1.1 1.4 1.6 + 16V HDI 110 BJ 01-10',
+                    price: '€48.76',
+                    volume: '12',
+                    total: '€89.00',
+                    lastSold: '9',
+                    itemId: '392127449722'
+                },
+                {
+                    image: 'https://i.ebayimg.com/images/g/KMMAAOSwOZBlex63/s-l1200.jpg',
+                    title: 'Anlasser Starter 1,1 KW für BMW Motorrad R 1200 GS Adventure LC 2014-2018',
+                    price: '€51.82',
+                    volume: '22',
+                    total: '€88.00',
+                    lastSold: '8',
+                    itemId: '266000985078'
+                }
+            ];
 
-            // Update tab counts
-            document.getElementById('similarCount').textContent = data.similarity_analysis.products_in_groups;
-            document.getElementById('ungroupedCount').textContent = data.total_products - data.similarity_analysis.products_in_groups;
-
-            // Display groups list
-            displayGroupsList(data.similar_groups);
-
-            // Display similar groups detail
-            displaySimilarGroupsDetail(data.similar_groups);
-
-            // Display ungrouped products
-            displayUngroupedProducts(data.products, data.similar_groups);
-
-            // Show results
-            results.classList.remove('hidden');
-            results.classList.add('fade-in');
-        }
-
-        function displayGroupsList(similarGroups) {
-            const container = document.getElementById('groupsList');
-            const groupsCount = document.getElementById('groupsCount');
-            
-            groupsCount.textContent = Object.keys(similarGroups).length;
-
-            if (Object.keys(similarGroups).length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-4 text-gray-500">
-                        <i class="fas fa-info-circle mb-2"></i>
-                        <p class="text-sm">未发现相似商品组</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = Object.entries(similarGroups).map(([groupId, products], index) => `
-                <div class="group-item rounded-lg p-3 cursor-pointer" onclick="scrollToGroup(${index + 1})">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <div class="font-medium text-gray-900">组 ${index + 1}</div>
-                            <div class="text-sm text-gray-600">${products.length} 个商品</div>
-                        </div>
-                        <button class="text-blue-600 text-sm font-medium hover:text-blue-800">
-                            <i class="fas fa-eye mr-1"></i>查看详情
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function displaySimilarGroupsDetail(similarGroups) {
-            const container = document.getElementById('similarGroupsDetail');
-            
-            if (Object.keys(similarGroups).length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8 text-gray-500">
-                        <i class="fas fa-info-circle text-2xl mb-2"></i>
-                        <p>未发现相似度达到80%以上的商品组</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = Object.entries(similarGroups).map(([groupId, products], index) => `
-                <div id="group-${index + 1}" class="similar-group rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                        组 ${index + 1} - ${products.length} 个相似商品
-                    </h3>
-                    <p class="text-sm text-gray-600 mb-4">这些商品被识别为相似商品，请根据图片、价格等因素人工判断选品。</p>
-                    <div class="space-y-4">
-                        ${products.map(item => createDetailedProductCard(item.product)).join('')}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function displayUngroupedProducts(allProducts, similarGroups) {
             const container = document.getElementById('ungroupedProductsList');
-            
-            // Get products that are not in any similar group
-            const groupedProductIndices = new Set();
-            Object.values(similarGroups).forEach(group => {
-                group.forEach(item => groupedProductIndices.add(item.index));
-            });
-            
-            const ungroupedProducts = allProducts.filter((product, index) => !groupedProductIndices.has(index));
-            
-            container.innerHTML = ungroupedProducts.map(product => createSimpleProductCard(product)).join('');
-        }
-
-        function createDetailedProductCard(product) {
-            const priceDisplay = product.price_without_tax || '价格未知';
-            const volumeDisplay = product.volume_numeric || 0;
-            const totalSalesDisplay = product.total_sales ? `€${product.total_sales.toFixed(2)}` : '€0.00';
-            const lastSoldDisplay = product.last_sold_time || '未知';
-            
-            return `
-                <div class="bg-white rounded-lg p-4 border border-gray-200">
-                    <div class="flex space-x-4">
-                        <div class="flex-shrink-0">
-                            ${product.image_url ? `
-                                <img src="${product.image_url}" alt="${product.title}" 
-                                     class="w-24 h-24 object-cover rounded-lg"
-                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <div class="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center hidden">
-                                    <i class="fas fa-image text-gray-400"></i>
-                                </div>
-                            ` : `
-                                <div class="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-image text-gray-400"></i>
-                                </div>
-                            `}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="text-blue-600 font-medium mb-2 hover:text-blue-800">
-                                ${product.product_url ? `
-                                    <a href="${product.product_url}" target="_blank">
-                                        ${product.title || '无标题'}
-                                    </a>
-                                ` : (product.title || '无标题')}
-                            </h4>
-                            <div class="grid grid-cols-2 gap-4 text-sm">
-                                <div class="flex items-center">
-                                    <i class="fas fa-tag text-yellow-500 mr-2"></i>
-                                    <span class="text-gray-600">税前价:</span>
-                                    <span class="ml-1 font-medium">${priceDisplay}</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-shopping-cart text-blue-500 mr-2"></i>
-                                    <span class="text-gray-600">销量:</span>
-                                    <span class="ml-1 font-medium">${volumeDisplay}</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-chart-line text-green-500 mr-2"></i>
-                                    <span class="text-gray-600">总额:</span>
-                                    <span class="ml-1 font-medium text-green-600">${totalSalesDisplay}</span>
-                                </div>
-                                ${lastSoldDisplay !== '未知' ? `
-                                    <div class="flex items-center">
-                                        <i class="fas fa-clock text-red-500 mr-2"></i>
-                                        <span class="text-gray-600">最近售出:</span>
-                                        <span class="ml-1 font-medium">${lastSoldDisplay}</span>
-                                    </div>
-                                ` : ''}
-                                <div class="flex items-center">
-                                    <i class="fas fa-barcode text-purple-500 mr-2"></i>
-                                    <span class="text-gray-600">Item ID:</span>
-                                    <span class="ml-1 text-xs text-gray-500">282639537944</span>
-                                </div>
+            container.innerHTML = sampleProducts.map(product => `
+                <div class="product-item">
+                    <img src="${product.image}" alt="${product.title}" class="product-image" onerror="this.style.display='none'">
+                    <div class="product-info">
+                        <a href="#" class="product-title">${product.title}</a>
+                        <div class="product-details">
+                            <div class="detail-item">
+                                <span class="detail-label">税前价:</span>
+                                <span class="detail-value price-value">${product.price}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">销量:</span>
+                                <span class="detail-value">${product.volume}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">总额:</span>
+                                <span class="detail-value price-value">${product.total}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">最近售出:</span>
+                                <span class="detail-value volume-value">${product.lastSold}</span>
+                            </div>
+                            <div class="detail-item" style="grid-column: 1 / -1;">
+                                <span class="detail-label">Item ID:</span>
+                                <span class="detail-value text-purple-600">${product.itemId}</span>
                             </div>
                         </div>
                     </div>
                 </div>
-            `;
-        }
-
-        function createSimpleProductCard(product) {
-            const priceDisplay = product.price_without_tax || '价格未知';
-            const volumeDisplay = product.volume_numeric || 0;
-            const totalSalesDisplay = product.total_sales ? `€${product.total_sales.toFixed(2)}` : '€0.00';
-            
-            return `
-                <div class="bg-white rounded-lg shadow-sm border p-4">
-                    ${product.image_url ? `
-                        <div class="aspect-w-16 aspect-h-9 mb-3">
-                            <img src="${product.image_url}" alt="${product.title}" 
-                                 class="w-full h-32 object-cover rounded-lg"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div class="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center hidden">
-                                <i class="fas fa-image text-gray-400 text-2xl"></i>
-                            </div>
-                        </div>
-                    ` : `
-                        <div class="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
-                            <i class="fas fa-image text-gray-400 text-2xl"></i>
-                        </div>
-                    `}
-                    
-                    <h4 class="font-medium text-gray-900 mb-2 line-clamp-2">
-                        ${product.product_url ? `
-                            <a href="${product.product_url}" target="_blank" class="text-blue-600 hover:text-blue-800">
-                                ${product.title || '无标题'}
-                            </a>
-                        ` : (product.title || '无标题')}
-                    </h4>
-                    
-                    <div class="space-y-1 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">税前价:</span>
-                            <span class="font-medium">${priceDisplay}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">销量:</span>
-                            <span class="font-medium">${volumeDisplay}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">总额:</span>
-                            <span class="font-medium text-green-600">${totalSalesDisplay}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
+            `).join('');
         }
 
         function scrollToGroup(groupNumber) {
@@ -609,6 +781,10 @@
                 }, 2000);
             }
         }
+
+        // Show results by default for demo
+        results.classList.remove('hidden');
+        populateUngroupedProducts();
     </script>
 </body>
 </html>
