@@ -9,8 +9,17 @@ import tempfile
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
+import time
 
 csv_analyzer_bp = Blueprint('csv_analyzer', __name__)
+
+# 全局缓存
+image_hash_cache = {}
+similarity_cache = {}
+
+def get_cache_key(url1, url2):
+    """生成缓存键"""
+    return f"{min(url1, url2)}_{max(url1, url2)}"
 def download_image(url, timeout=10):
     """下载图片并返回PIL Image对象"""
     try:
@@ -29,32 +38,36 @@ def download_image(url, timeout=10):
     except Exception as e:
         print(f"下载图片失败 {url}: {str(e)}")
         return None
+import imagehash
 
-def simple_image_similarity(img1, img2):
-    """简单的图片相似度计算（基于像素差异）"""
+def calculate_image_hash(image, url=None):
+    """计算图片的感知哈希值（带缓存）"""
     try:
-        # 调整图片大小到相同尺寸
-        size = (64, 64)
-        img1_resized = img1.resize(size)
-        img2_resized = img2.resize(size)
+        # 如果有URL且已缓存，直接返回
+        if url and url in image_hash_cache:
+            return image_hash_cache[url]
         
-        # 转换为灰度
-        img1_gray = img1_resized.convert('L')
-        img2_gray = img2_resized.convert('L')
+        hash_value = imagehash.phash(image)
         
-        # 计算像素差异
-        pixels1 = list(img1_gray.getdata())
-        pixels2 = list(img2_gray.getdata())
-        
-        # 计算均方误差
-        mse = sum((p1 - p2) ** 2 for p1, p2 in zip(pixels1, pixels2)) / len(pixels1)
-        
-        # 转换为相似度（0-1之间）
-        similarity = max(0, 1 - mse / 10000)
-        return similarity
+        # 缓存结果
+        if url:
+            image_hash_cache[url] = hash_value
+            
+        return hash_value
     except Exception as e:
-        print(f"计算相似度失败: {str(e)}")
+        print(f"计算图片哈希失败: {str(e)}")
+        return None
+
+def image_hash_similarity(hash1, hash2):
+    """计算两个哈希值之间的相似度（0-1，1表示完全相同）"""
+    if hash1 is None or hash2 is None:
         return 0.0
+    # 感知哈希的差异值越小，相似度越高
+    # 这里将差异值转换为相似度分数，最大差异为64（对于phash）
+    max_hash_diff = 64  # phash的默认哈希大小是8x8=64位
+    diff = hash1 - hash2
+    similarity = 1 - (diff / max_hash_diff)
+    return max(0, similarity)
 
 def parse_price(price_str):
     """解析价格字符串，返回数值"""
@@ -141,14 +154,40 @@ def calculate_price_similarity(price1, price2):
         print(f"计算价格相似度失败: {str(e)}")
         return 0.0
 
+def quick_filter_by_title_and_price(product1, product2, min_title_similarity=0.3, max_price_diff=0.5):
+    """快速过滤：基于标题和价格的早期筛选"""
+    try:
+        # 标题快速检查
+        title_sim = calculate_title_similarity(product1['title'], product2['title'])
+        if title_sim < min_title_similarity:
+            return False
+        
+        # 价格快速检查
+        price1 = product1.get('price_numeric', 0)
+        price2 = product2.get('price_numeric', 0)
+        
+        if price1 > 0 and price2 > 0:
+            price_diff = abs(price1 - price2) / max(price1, price2)
+            if price_diff > max_price_diff:
+                return False
+        
+        return True
+    except Exception as e:
+        print(f"快速过滤失败: {str(e)}")
+        return True  # 出错时保守处理，不过滤
+
 def calculate_comprehensive_similarity(product1, product2, img1=None, img2=None):
     """计算综合相似度"""
     try:
         # 图片相似度（权重40%）
         image_similarity = 0.0
         if img1 and img2:
-            image_similarity = simple_image_similarity(img1, img2)
-        
+            # 传入URL用于缓存
+            url1 = product1.get('image_url', '')
+            url2 = product2.get('image_url', '')
+            hash1 = calculate_image_hash(img1, url1)
+            hash2 = calculate_image_hash(img2, url2)
+            image_similarity = image_hash_similarity(hash1, hash2)
         # 标题相似度（权重40%）
         title_similarity = calculate_title_similarity(product1['title'], product2['title'])
         
@@ -178,15 +217,26 @@ def calculate_comprehensive_similarity(product1, product2, img1=None, img2=None)
         }
 
 def find_similar_products_simple(products, similarity_threshold=0.5):
-    """找到相似的商品（改进版综合评分）"""
-    # 下载所有图片
+    """找到相似的商品（优化版：缓存+早期过滤+进度显示）"""
+    start_time = time.time()
+    print(f"开始分析 {len(products)} 个产品...")
+    
+    # 下载所有图片（增加并发数）
     images = {}
     valid_products = []
     
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    print("正在下载图片...")
+    with ThreadPoolExecutor(max_workers=20) as executor:  # 增加并发数
         future_to_product = {executor.submit(download_image, product["image_url"]): (i, product) for i, product in enumerate(products) if product["image_url"]}
+        completed = 0
+        total = len(future_to_product)
+        
         for future in concurrent.futures.as_completed(future_to_product):
             idx, product = future_to_product[future]
+            completed += 1
+            if completed % 10 == 0 or completed == total:
+                print(f"图片下载进度: {completed}/{total}")
+                
             try:
                 image = future.result()
                 if image:
@@ -200,10 +250,18 @@ def find_similar_products_simple(products, similarity_threshold=0.5):
                 # 即使图片下载失败，也保留产品用于标题和价格比较
                 valid_products.append((idx, product))
 
-    # 综合相似度比较
+    download_time = time.time() - start_time
+    print(f"图片下载完成，耗时: {download_time:.2f}秒")
+
+    # 综合相似度比较（带早期过滤）
+    print("开始相似度分析...")
     similar_groups = {}
     group_id = 0
     processed = set()
+    comparisons_made = 0
+    comparisons_skipped = 0
+    
+    total_comparisons = len(valid_products) * (len(valid_products) - 1) // 2
     
     for i, (idx1, product1) in enumerate(valid_products):
         if idx1 in processed:
@@ -215,6 +273,13 @@ def find_similar_products_simple(products, similarity_threshold=0.5):
         for j, (idx2, product2) in enumerate(valid_products[i+1:], i+1):
             if idx2 in processed:
                 continue
+            
+            # 早期过滤：快速检查标题和价格
+            if not quick_filter_by_title_and_price(product1, product2):
+                comparisons_skipped += 1
+                continue
+            
+            comparisons_made += 1
             
             # 计算综合相似度
             img1 = images.get(idx1)
@@ -243,6 +308,16 @@ def find_similar_products_simple(products, similarity_threshold=0.5):
         if len(current_group) > 1:
             similar_groups[group_id] = current_group
             group_id += 1
+        
+        # 进度显示
+        if (i + 1) % 10 == 0:
+            progress = (i + 1) / len(valid_products) * 100
+            print(f"分析进度: {progress:.1f}% ({i + 1}/{len(valid_products)})")
+    
+    total_time = time.time() - start_time
+    print(f"分析完成！总耗时: {total_time:.2f}秒")
+    print(f"比较统计: 执行了 {comparisons_made} 次详细比较，跳过了 {comparisons_skipped} 次")
+    print(f"效率提升: {comparisons_skipped / (comparisons_made + comparisons_skipped) * 100:.1f}% 的比较被跳过")
     
     return similar_groups, [], []
 
