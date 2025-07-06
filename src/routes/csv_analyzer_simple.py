@@ -104,8 +104,81 @@ def parse_csv_data(csv_content, filename):
     except Exception as e:
         print(f"解析CSV文件 {filename} 失败: {str(e)}")
         return []
-def find_similar_products_simple(products, similarity_threshold=0.7):
-    """找到相似的商品（简化版）"""
+def calculate_title_similarity(title1, title2):
+    """计算标题相似度"""
+    try:
+        # 转换为小写并分词
+        words1 = set(title1.lower().split())
+        words2 = set(title2.lower().split())
+        
+        # 计算交集和并集
+        intersection = words1.intersection(words2)
+        union = words1.union(words2)
+        
+        # Jaccard相似度
+        if len(union) == 0:
+            return 0.0
+        
+        similarity = len(intersection) / len(union)
+        return similarity
+    except Exception as e:
+        print(f"计算标题相似度失败: {str(e)}")
+        return 0.0
+
+def calculate_price_similarity(price1, price2):
+    """计算价格相似度"""
+    try:
+        if price1 == 0 or price2 == 0:
+            return 0.0
+        
+        # 计算价格差异百分比
+        price_diff = abs(price1 - price2) / max(price1, price2)
+        
+        # 转换为相似度（差异越小，相似度越高）
+        similarity = max(0, 1 - price_diff)
+        return similarity
+    except Exception as e:
+        print(f"计算价格相似度失败: {str(e)}")
+        return 0.0
+
+def calculate_comprehensive_similarity(product1, product2, img1=None, img2=None):
+    """计算综合相似度"""
+    try:
+        # 图片相似度（权重40%）
+        image_similarity = 0.0
+        if img1 and img2:
+            image_similarity = simple_image_similarity(img1, img2)
+        
+        # 标题相似度（权重40%）
+        title_similarity = calculate_title_similarity(product1['title'], product2['title'])
+        
+        # 价格相似度（权重20%）
+        price_similarity = calculate_price_similarity(product1['price_numeric'], product2['price_numeric'])
+        
+        # 综合评分
+        comprehensive_score = (
+            image_similarity * 0.4 +
+            title_similarity * 0.4 +
+            price_similarity * 0.2
+        )
+        
+        return {
+            'comprehensive_score': comprehensive_score,
+            'image_similarity': image_similarity,
+            'title_similarity': title_similarity,
+            'price_similarity': price_similarity
+        }
+    except Exception as e:
+        print(f"计算综合相似度失败: {str(e)}")
+        return {
+            'comprehensive_score': 0.0,
+            'image_similarity': 0.0,
+            'title_similarity': 0.0,
+            'price_similarity': 0.0
+        }
+
+def find_similar_products_simple(products, similarity_threshold=0.5):
+    """找到相似的商品（改进版综合评分）"""
     # 下载所有图片
     images = {}
     valid_products = []
@@ -119,10 +192,15 @@ def find_similar_products_simple(products, similarity_threshold=0.7):
                 if image:
                     images[idx] = image
                     valid_products.append((idx, product))
+                else:
+                    # 即使图片下载失败，也保留产品用于标题和价格比较
+                    valid_products.append((idx, product))
             except Exception as exc:
                 print(f"图片下载生成异常: {exc}")
+                # 即使图片下载失败，也保留产品用于标题和价格比较
+                valid_products.append((idx, product))
 
-    # 简单的相似度比较
+    # 综合相似度比较
     similar_groups = {}
     group_id = 0
     processed = set()
@@ -137,12 +215,30 @@ def find_similar_products_simple(products, similarity_threshold=0.7):
         for j, (idx2, product2) in enumerate(valid_products[i+1:], i+1):
             if idx2 in processed:
                 continue
-                
-            if idx1 in images and idx2 in images:
-                similarity = simple_image_similarity(images[idx1], images[idx2])
-                if similarity >= similarity_threshold:
-                    current_group.append({"product": product2, "index": idx2})
-                    processed.add(idx2)
+            
+            # 计算综合相似度
+            img1 = images.get(idx1)
+            img2 = images.get(idx2)
+            
+            similarity_result = calculate_comprehensive_similarity(product1, product2, img1, img2)
+            comprehensive_score = similarity_result['comprehensive_score']
+            
+            # 特殊规则：如果标题相似度很高（>0.8）且价格相似度也高（>0.8），降低阈值
+            if (similarity_result['title_similarity'] > 0.8 and 
+                similarity_result['price_similarity'] > 0.8):
+                adjusted_threshold = 0.4
+            else:
+                adjusted_threshold = similarity_threshold
+            
+            if comprehensive_score >= adjusted_threshold:
+                current_group.append({
+                    "product": product2, 
+                    "index": idx2,
+                    "similarity_details": similarity_result
+                })
+                processed.add(idx2)
+                print(f"找到相似产品: {product1['title'][:50]}... <-> {product2['title'][:50]}...")
+                print(f"综合相似度: {comprehensive_score:.3f}, 图片: {similarity_result['image_similarity']:.3f}, 标题: {similarity_result['title_similarity']:.3f}, 价格: {similarity_result['price_similarity']:.3f}")
         
         if len(current_group) > 1:
             similar_groups[group_id] = current_group
@@ -186,8 +282,14 @@ def upload_csv():
             'products': all_products,
             'similar_groups': similar_groups,
             'similarity_analysis': {
-   
-            'threshold': 0.7,
+                'threshold': 0.5,
+                'algorithm': 'comprehensive_scoring',
+                'weights': {
+                    'image_similarity': 0.4,
+                    'title_similarity': 0.4,
+                    'price_similarity': 0.2
+                },
+                'special_rules': 'Lower threshold (0.4) for high title+price similarity',
                 'groups_found': len(similar_groups),
                 'products_in_groups': sum(len(group) for group in similar_groups.values())
             }

@@ -217,27 +217,27 @@
         .calculator-input {
             width: 100%;
             padding: 12px;
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid #d1d5db;
             border-radius: 6px;
-            background: rgba(255,255,255,0.1);
-            color: white;
+            background: white;
+            color: #374151;
             margin-bottom: 16px;
         }
         .calculator-input::placeholder {
-            color: rgba(255,255,255,0.7);
+            color: #9ca3af;
         }
         .calculator-input:focus {
             outline: none;
-            border-color: rgba(255,255,255,0.5);
-            background: rgba(255,255,255,0.15);
+            border-color: #3b82f6;
+            background: white;
         }
         .dimension-input {
             width: 60px;
             padding: 8px;
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid #d1d5db;
             border-radius: 4px;
-            background: rgba(255,255,255,0.1);
-            color: white;
+            background: white;
+            color: #374151;
             text-align: center;
             margin-right: 8px;
         }
@@ -789,7 +789,7 @@
             });
 
             try {
-                const API_BASE_URL = "https://5000-iy7golcuyofeiw2itsvrv-12ba2d39.manusvm.computer";
+                const API_BASE_URL = "https://5000-ixx0lqgf637vxymdo991a-a1a39fb2.manusvm.computer";
                 const response = await fetch(`${API_BASE_URL}/api/csv/upload`, {
                     method: "POST",
                     body: formData,
@@ -1193,10 +1193,9 @@
             }
 
             // 4. 利润 = 净收入 - 物流费 - 采购价
-            // 注意：物流费需要转换为人民币，采购价已经是人民币
+            // 注意：物流费已经是人民币，净收入需要转换为人民币
             const eurToRmbRate = 7.28; // 欧元到人民币汇率
-            const shippingCostRmb = shippingCost * eurToRmbRate;
-            const profit = netIncome * eurToRmbRate - shippingCostRmb - purchaseCost;
+            const profit = netIncome * eurToRmbRate - shippingCost - purchaseCost;
 
             // 5. 利润率 = 利润 / (不含税价 × 7.28)
             const profitMargin = (profit / (priceExcludingTax * eurToRmbRate)) * 100;
@@ -1206,7 +1205,7 @@
             document.getElementById('netIncome').textContent = `€${netIncome.toFixed(2)}`;
             document.getElementById('volumeWeight').textContent = `${volumeWeight.toFixed(3)} kg`;
             document.getElementById('chargeableWeight').textContent = `${chargeableWeight.toFixed(3)} kg`;
-            document.getElementById('shippingCost').textContent = `¥${shippingCostRmb.toFixed(2)}`;
+            document.getElementById('shippingCost').textContent = `¥${shippingCost.toFixed(2)}`;
             document.getElementById('profitAmount').textContent = `¥${profit.toFixed(2)}`;
             document.getElementById('profitMargin').textContent = `${profitMargin.toFixed(2)}%`;
 
