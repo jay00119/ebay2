@@ -58,9 +58,17 @@
         .group-item {
             border-left: 4px solid #fbbf24;
             background: #fef3c7;
+            cursor: pointer;
         }
         .group-item:hover {
             background: #fde68a;
+        }
+        .group-item.active {
+            border-left: 4px solid #3b82f6;
+            background: #dbeafe;
+        }
+        .group-item.active:hover {
+            background: #bfdbfe;
         }
         .stat-card {
             background: white;
@@ -87,6 +95,26 @@
             flex-direction: column;
             gap: 16px;
         }
+        .ungrouped-product-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        @media (max-width: 1200px) {
+            .ungrouped-product-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        @media (max-width: 900px) {
+            .ungrouped-product-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .ungrouped-product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
         .product-item {
             background: white;
             border-radius: 8px;
@@ -97,18 +125,40 @@
             align-items: flex-start;
             padding: 16px;
         }
+        .ungrouped-product-item {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
         .product-item:hover {
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             transform: translateY(-2px);
         }
+        .ungrouped-product-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
         .product-image {
-            width: 120px;
-            height: 120px;
+            width: 144px;
+            height: 144px;
             object-fit: cover;
             background-color: #f3f4f6;
             border-radius: 6px;
             margin-right: 16px;
             flex-shrink: 0;
+        }
+        .ungrouped-product-image {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            background-color: #f3f4f6;
+            border-radius: 6px;
+            margin-bottom: 12px;
         }
         .product-info {
             flex: 1;
@@ -128,6 +178,12 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px 24px;
+            font-size: 0.875rem;
+        }
+        .ungrouped-product-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
             font-size: 0.875rem;
         }
         .detail-item {
@@ -712,7 +768,8 @@
             });
 
             try {
-                const response = await fetch("/api/csv/upload", {
+                const API_BASE_URL = "https://5000-iy7golcuyofeiw2itsvrv-12ba2d39.manusvm.computer";
+                const response = await fetch(`${API_BASE_URL}/api/csv/upload`, {
                     method: "POST",
                     body: formData,
                 });
@@ -760,36 +817,58 @@
             similarGroupsDetailContainer.innerHTML = ""; // Clear existing detailed groups
 
             let groupCount = 0;
+            let firstGroupId = null;
+            
             for (const groupId in similarGroups) {
                 groupCount++;
+                if (firstGroupId === null) firstGroupId = groupId;
+                
                 const group = similarGroups[groupId];
+                
+                // Sort products by sales volume (high to low)
+                const sortedGroup = [...group].sort((a, b) => {
+                    const volumeA = parseInt(a.product.volume_numeric) || 0;
+                    const volumeB = parseInt(b.product.volume_numeric) || 0;
+                    return volumeB - volumeA;
+                });
+                
                 const groupItem = document.createElement("div");
                 groupItem.className = "group-item rounded-lg p-3";
+                groupItem.id = `group-item-${groupId}`;
                 groupItem.innerHTML = `
                     <div class="flex justify-between items-center">
                         <div>
                             <div class="font-medium text-gray-900">组 ${groupCount}</div>
                             <div class="text-sm text-gray-600">${group.length} 个商品</div>
                         </div>
-                        <button class="copy-group-btn" onclick="copyGroupItemIds(${groupId})">
+                        <button class="copy-group-btn" onclick="copyGroupItemIds(${groupId}); event.stopPropagation();">
                             <i class="fas fa-copy mr-1"></i>一键复制
                         </button>
                     </div>
                 `;
+                
+                // Add click handler for group selection
+                groupItem.addEventListener('click', () => selectGroup(groupId));
                 groupsListContainer.appendChild(groupItem);
 
                 const detailedGroup = document.createElement("div");
-                detailedGroup.id = `group-${groupId}`;
+                detailedGroup.id = `group-detail-${groupId}`;
                 detailedGroup.className = "similar-group rounded-lg p-6 mb-6";
+                detailedGroup.style.display = 'none'; // Initially hide all groups
                 detailedGroup.innerHTML = `
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                        组 ${groupCount} - ${group.length} 个相似商品
+                        组 ${groupCount} - ${group.length} 个相似商品 <span class="text-sm text-gray-600">(按销量排序)</span>
                     </h3>
                     <p class="text-sm text-gray-600 mb-4">这些商品被识别为相似商品，请根据图片、价格等因素人工判断选品。</p>
                     <div class="product-grid">
-                        ${group.map(item => `
+                        ${sortedGroup.map((item, index) => `
                             <div class="product-item">
-                                <img src="${item.product.image_url}" alt="${item.product.title}" class="product-image" onerror="this.style.display=\'none\'">
+                                <div class="relative">
+                                    <img src="${item.product.image_url}" alt="${item.product.title}" class="product-image" onerror="this.style.display=\'none\'">
+                                    <div class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                                        #${index + 1}
+                                    </div>
+                                </div>
                                 <div class="product-info">
                                     <a href="${item.product.product_url}" target="_blank" class="product-title">${item.product.title}</a>
                                     <div class="product-details">
@@ -799,7 +878,7 @@
                                         </div>
                                         <div class="detail-item">
                                             <span class="detail-label">销量:</span>
-                                            <span class="detail-value">${item.product.volume_numeric}</span>
+                                            <span class="detail-value volume-value">${item.product.volume_numeric}</span>
                                         </div>
                                         <div class="detail-item">
                                             <span class="detail-label">总额:</span>
@@ -807,11 +886,11 @@
                                         </div>
                                         <div class="detail-item">
                                             <span class="detail-label">最近售出:</span>
-                                            <span class="detail-value volume-value">${item.product.last_sold_time || 'N/A'}</span>
+                                            <span class="detail-value">${item.product.last_sold_time || 'N/A'}</span>
                                         </div>
                                         <div class="detail-item" style="grid-column: 1 / -1;">
                                             <span class="detail-label">Item ID:</span>
-                                            <span class="detail-value text-purple-600">${extractItemId(item.product.product_url) || 'N/A'}</span>
+                                            <span class="detail-value text-purple-600 font-mono">${extractItemId(item.product.product_url) || 'N/A'}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -820,9 +899,18 @@
                     </div>
                 `;
                 similarGroupsDetailContainer.appendChild(detailedGroup);
+                
+                // Store sorted group for copy function
+                similarGroups[groupId] = sortedGroup;
             }
+            
             document.getElementById("groupsCount").textContent = groupCount;
             document.getElementById("similarCount").textContent = groupCount;
+            
+            // Select the first group by default
+            if (firstGroupId !== null) {
+                selectGroup(firstGroupId);
+            }
         }
 
         function populateUngroupedProducts(allProducts) {
@@ -839,21 +927,37 @@
             }
 
             const ungroupedProducts = allProducts.filter(product => !groupedItemIds.has(extractItemId(product.product_url)));
-            document.getElementById("ungroupedCount").textContent = ungroupedProducts.length;
+            
+            // Sort ungrouped products by sales volume (high to low)
+            const sortedUngroupedProducts = ungroupedProducts.sort((a, b) => {
+                const volumeA = parseInt(a.volume_numeric) || 0;
+                const volumeB = parseInt(b.volume_numeric) || 0;
+                return volumeB - volumeA;
+            });
+            
+            document.getElementById("ungroupedCount").textContent = sortedUngroupedProducts.length;
 
-            ungroupedProductsListContainer.innerHTML = ungroupedProducts.map(product => `
-                <div class="product-item">
-                    <img src="${product.image_url}" alt="${product.title}" class="product-image" onerror="this.style.display=\'none\'">
+            // Change the container to use grid layout
+            ungroupedProductsListContainer.className = "ungrouped-product-grid";
+            
+            ungroupedProductsListContainer.innerHTML = sortedUngroupedProducts.map((product, index) => `
+                <div class="ungrouped-product-item">
+                    <div class="relative">
+                        <img src="${product.image_url}" alt="${product.title}" class="ungrouped-product-image" onerror="this.style.display=\'none\'">
+                        <div class="absolute top-2 left-2 bg-gray-600 text-white text-xs px-2 py-1 rounded">
+                            #${index + 1}
+                        </div>
+                    </div>
                     <div class="product-info">
                         <a href="${product.product_url}" target="_blank" class="product-title">${product.title}</a>
-                        <div class="product-details">
+                        <div class="ungrouped-product-details">
                             <div class="detail-item">
                                 <span class="detail-label">税前价:</span>
                                 <span class="detail-value price-value">€${product.price_numeric.toFixed(2)}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">销量:</span>
-                                <span class="detail-value">${product.volume_numeric}</span>
+                                <span class="detail-value volume-value">${product.volume_numeric}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">总额:</span>
@@ -861,11 +965,11 @@
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">最近售出:</span>
-                                <span class="detail-value volume-value">${product.last_sold_time || 'N/A'}</span>
+                                <span class="detail-value">${product.last_sold_time || 'N/A'}</span>
                             </div>
-                            <div class="detail-item" style="grid-column: 1 / -1;">
+                            <div class="detail-item">
                                 <span class="detail-label">Item ID:</span>
-                                <span class="detail-value text-purple-600">${extractItemId(product.product_url) || 'N/A'}</span>
+                                <span class="detail-value text-purple-600 font-mono">${extractItemId(product.product_url) || 'N/A'}</span>
                             </div>
                         </div>
                     </div>
@@ -873,48 +977,106 @@
             `).join('');
         }
 
-        // 从商品URL中提取Item ID的函数
-        function extractItemId(url) {
-            const match = url.match(/\/itm\/(\d{12})/);
-            return match ? match[1] : null;
+        // 选择并显示特定商品组
+        function selectGroup(groupId) {
+            // Remove active class from all group items
+            document.querySelectorAll('.group-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to selected group item
+            const selectedGroupItem = document.getElementById(`group-item-${groupId}`);
+            if (selectedGroupItem) {
+                selectedGroupItem.classList.add('active');
+            }
+            
+            // Hide all group details
+            document.querySelectorAll('[id^="group-detail-"]').forEach(detail => {
+                detail.style.display = 'none';
+            });
+            
+            // Show selected group detail
+            const selectedGroupDetail = document.getElementById(`group-detail-${groupId}`);
+            if (selectedGroupDetail) {
+                selectedGroupDetail.style.display = 'block';
+            }
         }
 
-        // 复制组内所有商品的Item ID
+        // 从商品URL中提取Item ID的函数 (改进版，支持多种URL格式)
+        function extractItemId(url) {
+            if (!url) return null;
+            
+            // 匹配多种eBay URL格式中的12位数字Item ID
+            const patterns = [
+                /\/itm\/(\d{12})/,           // 标准格式: /itm/123456789012
+                /\/p\/(\d{12})/,            // 简化格式: /p/123456789012
+                /item=(\d{12})/,            // 查询参数格式: ?item=123456789012
+                /\/(\d{12})(?:\/|\?|$)/,    // 直接在路径中的12位数字
+                /ebay\.com\/.*?(\d{12})/    // 通用匹配eBay域名后的12位数字
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) {
+                    return match[1];
+                }
+            }
+            
+            return null;
+        }
+
+        // 复制组内所有商品的Item ID (增强版，适合Excel导入)
         function copyGroupItemIds(groupId) {
             const group = analysisResults.similar_groups[groupId];
             if (!group) return;
-            const itemIds = group.map(item => extractItemId(item.product.product_url)).filter(id => id !== null).join('\n');
             
-            navigator.clipboard.writeText(itemIds).then(() => {
-                showCopySuccess(groupId, group.length);
+            // 提取所有有效的Item ID
+            const itemIds = group.map(item => extractItemId(item.product.product_url))
+                                 .filter(id => id !== null && id !== 'N/A');
+            
+            if (itemIds.length === 0) {
+                alert('该组没有找到有效的Item ID');
+                return;
+            }
+            
+            // 创建适合Excel的格式：每行一个ID，便于粘贴到Excel列中
+            const itemIdsText = itemIds.join('\n');
+            
+            // 复制到剪贴板
+            navigator.clipboard.writeText(itemIdsText).then(() => {
+                showCopySuccess(groupId, itemIds.length);
             }).catch(err => {
-                console.error('复制失败:', err);
+                console.error('复制失败，尝试备用方法:', err);
+                // 备用复制方法
                 const textArea = document.createElement('textarea');
-                textArea.value = itemIds;
+                textArea.value = itemIdsText;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                showCopySuccess(groupId, group.length);
+                showCopySuccess(groupId, itemIds.length);
             });
         }
 
-        // 显示复制成功提示
+        // 显示复制成功提示 (简化版，只显示按钮反馈)
         function showCopySuccess(groupNumber, count) {
-            const button = document.querySelector(`button[onclick="copyGroupItemIds(${groupNumber})"]`);
+            const button = document.querySelector(`button[onclick="copyGroupItemIds(${groupNumber}); event.stopPropagation();"]`);
+            if (!button) return;
+            
             const originalText = button.innerHTML;
             
-            button.innerHTML = 
-                `<i class="fas fa-check mr-1"></i>已复制`;
+            button.innerHTML = `<i class="fas fa-check mr-1"></i>已复制 ${count} 个ID`;
             button.style.background = '#10b981';
             
             setTimeout(() => {
                 button.innerHTML = originalText;
                 button.style.background = '#3b82f6';
-            }, 2000);
+            }, 3000);
             
-            // 可选：显示更详细的提示
-            console.log(`已复制组 ${groupNumber} 的 ${count} 个商品 Item ID`);
+            // 只在控制台显示成功消息，不显示弹出通知
+            console.log(`✅ 成功复制组 ${groupNumber} 的 ${count} 个 Item ID，可直接粘贴到Excel中`);
         }
         document.querySelector('#ungroupedContent .copy-btn').addEventListener('click', () => {
             const ungroupedProductsListContainer = document.getElementById("ungroupedProductsList");

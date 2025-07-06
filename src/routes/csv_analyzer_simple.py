@@ -104,7 +104,7 @@ def parse_csv_data(csv_content, filename):
     except Exception as e:
         print(f"解析CSV文件 {filename} 失败: {str(e)}")
         return []
-def find_similar_products_simple(products, similarity_threshold=0.8):
+def find_similar_products_simple(products, similarity_threshold=0.7):
     """找到相似的商品（简化版）"""
     # 下载所有图片
     images = {}
@@ -186,7 +186,8 @@ def upload_csv():
             'products': all_products,
             'similar_groups': similar_groups,
             'similarity_analysis': {
-                'threshold': 0.8,
+   
+            'threshold': 0.7,
                 'groups_found': len(similar_groups),
                 'products_in_groups': sum(len(group) for group in similar_groups.values())
             }
