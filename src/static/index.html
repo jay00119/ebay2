@@ -56,19 +56,86 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
         .group-item {
-            border-left: 4px solid #fbbf24;
-            background: #fef3c7;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
             cursor: pointer;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+            padding: 12px;
+        }
+        .group-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            pointer-events: none;
         }
         .group-item:hover {
-            background: #fde68a;
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.25);
         }
         .group-item.active {
-            border-left: 4px solid #3b82f6;
-            background: #dbeafe;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
         .group-item.active:hover {
-            background: #bfdbfe;
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+        .group-item-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            color: white;
+        }
+        .group-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 8px;
+        }
+        .group-item-title {
+            font-size: 16px;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            line-height: 1.2;
+        }
+        .group-item-subtitle {
+            font-size: 11px;
+            opacity: 0.9;
+            line-height: 1.2;
+            font-weight: 400;
+        }
+        .group-item-button {
+            background: rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            align-self: flex-end;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .group-item-button:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.05);
         }
         .stat-card {
             background: white;
@@ -214,7 +281,101 @@
         .volume-value {
             color: #dc2626;
         }
-        .calculator-input {
+        .clickable-item-id {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 2px 4px;
+            border-radius: 4px;
+            background: rgba(147, 51, 234, 0.1);
+        }
+        
+        .clickable-item-id:hover {
+            background: rgba(147, 51, 234, 0.2);
+            transform: scale(1.02);
+        }
+        
+        .clickable-item-id:active {
+            transform: scale(0.98);
+        }
+
+        .compact-input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 12px;
+            height: 32px;
+        }
+        
+        .compact-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .mini-input {
+            width: 100%;
+            padding: 4px 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 11px;
+            height: 28px;
+            text-align: center;
+        }
+        
+        .compact-shipping-option {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+            height: 32px;
+        }
+        
+        .compact-shipping-option.selected {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .compact-shipping-option input[type="radio"] {
+            margin-right: 6px;
+            width: 12px;
+            height: 12px;
+        }
+        
+        .compact-calculate-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            height: 36px;
+        }
+        
+        .compact-calculate-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px);
+        }
+        
+        .compact-result-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .compact-result-item span:first-child {
+            margin-bottom: 2px;
+        }
             width: 100%;
             padding: 12px;
             border: 1px solid #d1d5db;
@@ -405,7 +566,7 @@
 
             <!-- Main Content Area -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Left Column: Product Groups & Calculator -->
+                <!-- Left Column: Product Groups -->
                 <div class="lg:col-span-1">
                     <!-- Product Groups List -->
                     <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -416,7 +577,7 @@
                         <div id="groupsSummary" class="text-sm text-gray-600 mb-4">
                             共发现 <span id="groupsCount">2</span> 个相似商品组
                         </div>
-                        <div id="groupsList" class="space-y-3">
+                        <div id="groupsList" class="grid grid-cols-3 gap-3">
                             <div class="group-item rounded-lg p-3">
                                 <div class="flex justify-between items-center">
                                     <div>
@@ -441,94 +602,98 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- German Profit Calculator -->
-                    <div class="calculator-section rounded-lg shadow-sm p-6 text-white">
-                        <h2 class="text-xl font-semibold mb-4 flex items-center">
-                            <i class="fas fa-calculator mr-2"></i>
-                            德国利润计算器
-                        </h2>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium mb-2">不含税价 (€)</label>
-                                <input type="number" id="priceInput" class="calculator-input" placeholder="请输入不含税价" step="0.01">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium mb-2">实际重量 (kg)</label>
-                                <input type="number" id="weightInput" class="calculator-input" placeholder="请输入实际重量" step="0.01">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium mb-2">采购成本 (¥)</label>
-                                <input type="number" id="costInput" class="calculator-input" placeholder="请输入采购成本" step="0.01">
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium mb-2">尺寸 (cm)</label>
-                                <div class="grid grid-cols-3 gap-2">
-                                    <input type="number" id="lengthInput" class="dimension-input" placeholder="长" value="1" step="0.1">
-                                    <input type="number" id="widthInput" class="dimension-input" placeholder="宽" value="1" step="0.1">
-                                    <input type="number" id="heightInput" class="dimension-input" placeholder="高" value="1" step="0.1">
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium mb-2">物流渠道</label>
-                                <div class="space-y-2">
-                                    <div class="shipping-option selected" onclick="selectShipping('economy')">
-                                        <input type="radio" name="shipping" value="economy" checked>
-                                        <span>经济物流</span>
-                                    </div>
-                                    <div class="shipping-option" onclick="selectShipping('standard')">
-                                        <input type="radio" name="shipping" value="standard">
-                                        <span>标准物流</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <button id="calculateBtn" class="calculate-btn">
-                                <i class="fas fa-calculator mr-2"></i>
-                                计算利润
-                            </button>
-                            
-                            <div id="profitResult" class="hidden mt-4 p-4 bg-white bg-opacity-20 rounded-lg">
-                                <div class="result-item">
-                                    <span>含税价</span>
-                                    <span id="taxIncludedPrice">€0.00</span>
-                                </div>
-                                <div class="result-item">
-                                    <span>净收入</span>
-                                    <span id="netIncome">€0.00</span>
-                                </div>
-                                <div class="result-item">
-                                    <span>体积重</span>
-                                    <span id="volumeWeight">0.00 kg</span>
-                                </div>
-                                <div class="result-item">
-                                    <span>计费重量</span>
-                                    <span id="chargeableWeight">0.00 kg</span>
-                                </div>
-                                <div class="result-item">
-                                    <span>物流费</span>
-                                    <span id="shippingCost">¥0.00</span>
-                                </div>
-                                <div class="result-item">
-                                    <span>利润</span>
-                                    <span id="profitAmount">¥0.00</span>
-                                </div>
-                                <div class="result-item">
-                                    <span>利润率</span>
-                                    <span id="profitMargin">0.00%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Right Column: Product Details -->
                 <div class="lg:col-span-2">
+                    <!-- German Profit Calculator -->
+                    <div class="calculator-section rounded-lg shadow-sm p-4 text-white mb-4">
+                        <h2 class="text-lg font-semibold mb-3 flex items-center">
+                            <i class="fas fa-calculator mr-2"></i>
+                            德国利润计算器
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Left Half: Input Fields -->
+                            <div class="space-y-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1">不含税价 (€)</label>
+                                        <input type="number" id="priceInput" class="compact-input" placeholder="0.00" step="0.01">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1">实际重量 (kg)</label>
+                                        <input type="number" id="weightInput" class="compact-input" placeholder="0.00" step="0.01">
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1">采购成本 (¥)</label>
+                                        <input type="number" id="costInput" class="compact-input" placeholder="0.00" step="0.01">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1">尺寸 (cm)</label>
+                                        <div class="grid grid-cols-3 gap-1">
+                                            <input type="number" id="lengthInput" class="mini-input" placeholder="1" value="1" step="0.1">
+                                            <input type="number" id="widthInput" class="mini-input" placeholder="1" value="1" step="0.1">
+                                            <input type="number" id="heightInput" class="mini-input" placeholder="1" value="1" step="0.1">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Half: Shipping Options and Calculate Button -->
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">物流渠道</label>
+                                    <div class="grid grid-cols-2 gap-1">
+                                        <div class="compact-shipping-option selected" onclick="selectShipping('economy')">
+                                            <input type="radio" name="shipping" value="economy" checked>
+                                            <span class="text-xs">经济物流</span>
+                                        </div>
+                                        <div class="compact-shipping-option" onclick="selectShipping('standard')">
+                                            <input type="radio" name="shipping" value="standard">
+                                            <span class="text-xs">标准物流</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <button id="calculateBtn" class="compact-calculate-btn w-full">
+                                        <i class="fas fa-calculator mr-1"></i>
+                                        计算利润
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="profitResult" class="hidden mt-3 p-3 bg-white bg-opacity-20 rounded-lg">
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                                <div class="compact-result-item">
+                                    <span class="text-xs opacity-80">含税价</span>
+                                    <span id="taxIncludedPrice" class="font-medium">€0.00</span>
+                                </div>
+                                <div class="compact-result-item">
+                                    <span class="text-xs opacity-80">计费重量</span>
+                                    <span id="chargeableWeight" class="font-medium">0.00 kg</span>
+                                </div>
+                                <div class="compact-result-item">
+                                    <span class="text-xs opacity-80">物流费</span>
+                                    <span id="shippingCost" class="font-medium">¥0.00</span>
+                                </div>
+                                <div class="compact-result-item">
+                                    <span class="text-xs opacity-80">利润</span>
+                                    <span id="profitAmount" class="font-medium text-green-300">¥0.00</span>
+                                </div>
+                                <div class="compact-result-item">
+                                    <span class="text-xs opacity-80">利润率</span>
+                                    <span id="profitMargin" class="font-medium text-green-300">0.00%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Tabs -->
                     <div class="bg-white rounded-lg shadow-sm mb-6">
                         <div class="flex border-b">
@@ -789,7 +954,7 @@
             });
 
             try {
-                const API_BASE_URL = "https://5000-ixx0lqgf637vxymdo991a-a1a39fb2.manusvm.computer";
+                const API_BASE_URL = "https://5000-ilgk1c1e9rs1t90aar20n-f91fae04.manusvm.computer";
                 const response = await fetch(`${API_BASE_URL}/api/csv/upload`, {
                     method: "POST",
                     body: formData,
@@ -840,11 +1005,14 @@
             let groupCount = 0;
             let firstGroupId = null;
             
-            for (const groupId in similarGroups) {
+            // Convert similarGroups object to array and sort by group size (number of products)
+            const sortedGroups = Object.entries(similarGroups).sort((a, b) => {
+                return b[1].length - a[1].length; // Sort by group size descending
+            });
+            
+            for (const [groupId, group] of sortedGroups) {
                 groupCount++;
                 if (firstGroupId === null) firstGroupId = groupId;
-                
-                const group = similarGroups[groupId];
                 
                 // Sort products by sales volume (high to low)
                 const sortedGroup = [...group].sort((a, b) => {
@@ -854,16 +1022,16 @@
                 });
                 
                 const groupItem = document.createElement("div");
-                groupItem.className = "group-item rounded-lg p-3";
+                groupItem.className = "group-item";
                 groupItem.id = `group-item-${groupId}`;
                 groupItem.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <div class="font-medium text-gray-900">组 ${groupCount}</div>
-                            <div class="text-sm text-gray-600">${group.length} 个商品</div>
+                    <div class="group-item-content">
+                        <div class="group-item-info">
+                            <div class="group-item-title">组 ${groupCount}</div>
+                            <div class="group-item-subtitle">${group.length}个商品</div>
                         </div>
-                        <button class="copy-group-btn" onclick="copyGroupItemIds(${groupId}); event.stopPropagation();">
-                            <i class="fas fa-copy mr-1"></i>一键复制
+                        <button class="group-item-button" onclick="copyGroupItemIds(${groupId}); event.stopPropagation();">
+                            复制
                         </button>
                     </div>
                 `;
@@ -911,7 +1079,7 @@
                                         </div>
                                         <div class="detail-item" style="grid-column: 1 / -1;">
                                             <span class="detail-label">Item ID:</span>
-                                            <span class="detail-value text-purple-600 font-mono">${extractItemId(item.product.product_url) || 'N/A'}</span>
+                                            <span class="detail-value text-purple-600 font-mono clickable-item-id" onclick="copyItemId('${extractItemId(item.product.product_url) || 'N/A'}')" title="点击复制Item ID">${extractItemId(item.product.product_url) || 'N/A'}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -990,7 +1158,7 @@
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Item ID:</span>
-                                <span class="detail-value text-purple-600 font-mono">${extractItemId(product.product_url) || 'N/A'}</span>
+                                <span class="detail-value text-purple-600 font-mono clickable-item-id" onclick="copyItemId('${extractItemId(product.product_url) || 'N/A'}')" title="点击复制Item ID">${extractItemId(product.product_url) || 'N/A'}</span>
                             </div>
                         </div>
                     </div>
@@ -1202,8 +1370,6 @@
 
             // 显示结果
             document.getElementById('taxIncludedPrice').textContent = `€${taxIncludedPrice.toFixed(2)}`;
-            document.getElementById('netIncome').textContent = `€${netIncome.toFixed(2)}`;
-            document.getElementById('volumeWeight').textContent = `${volumeWeight.toFixed(3)} kg`;
             document.getElementById('chargeableWeight').textContent = `${chargeableWeight.toFixed(3)} kg`;
             document.getElementById('shippingCost').textContent = `¥${shippingCost.toFixed(2)}`;
             document.getElementById('profitAmount').textContent = `¥${profit.toFixed(2)}`;
@@ -1213,11 +1379,60 @@
             document.getElementById('profitResult').classList.remove('hidden');
         }
 
+        // 复制单个Item ID的函数
+        function copyItemId(itemId) {
+            if (itemId && itemId !== 'N/A') {
+                navigator.clipboard.writeText(itemId).then(() => {
+                    // 创建临时提示
+                    const toast = document.createElement('div');
+                    toast.textContent = `已复制 Item ID: ${itemId}`;
+                    toast.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #10b981;
+                        color: white;
+                        padding: 12px 20px;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        z-index: 10000;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        animation: slideIn 0.3s ease-out;
+                    `;
+                    
+                    // 添加动画样式
+                    if (!document.querySelector('#toast-animation-style')) {
+                        const style = document.createElement('style');
+                        style.id = 'toast-animation-style';
+                        style.textContent = `
+                            @keyframes slideIn {
+                                from { transform: translateX(100%); opacity: 0; }
+                                to { transform: translateX(0); opacity: 1; }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+                    
+                    document.body.appendChild(toast);
+                    
+                    // 3秒后移除提示
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 3000);
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    alert('复制失败，请手动复制: ' + itemId);
+                });
+            }
+        }
+
         // 绑定计算按钮事件
         document.getElementById('calculateBtn').addEventListener('click', calculateProfit);
 
-        // 绑定输入框回车事件
-        document.querySelectorAll('.calculator-input, .dimension-input').forEach(input => {
+        // 绑定输入框回车事件 - 修复为新的类名
+        document.querySelectorAll('.compact-input, .mini-input').forEach(input => {
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     calculateProfit();
