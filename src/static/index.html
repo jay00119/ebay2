@@ -90,6 +90,17 @@
             color: #6b7280;
             font-size: 0.875rem;
         }
+        /* 隐藏数字输入框的上下按钮 */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
         .product-grid {
             display: flex;
             flex-direction: column;
@@ -441,37 +452,39 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium mb-2">不含税价 (€)</label>
-                                <input type="number" id="priceInput" class="calculator-input" placeholder="请输入不含税价">
+                                <input type="number" id="priceInput" class="calculator-input" placeholder="请输入不含税价" step="0.01">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-2">实际重量 (kg)</label>
-                                <input type="number" id="weightInput" class="calculator-input" placeholder="请输入实际重量">
+                                <input type="number" id="weightInput" class="calculator-input" placeholder="请输入实际重量" step="0.01">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-2">采购成本 (¥)</label>
-                                <input type="number" id="costInput" class="calculator-input" placeholder="请输入采购成本">
+                                <input type="number" id="costInput" class="calculator-input" placeholder="请输入采购成本" step="0.01">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium mb-2">尺寸 (cm)</label>
-                                <div class="flex items-center">
-                                    <input type="number" id="lengthInput" class="dimension-input" placeholder="长" value="1">
-                                    <input type="number" id="widthInput" class="dimension-input" placeholder="宽" value="1">
-                                    <input type="number" id="heightInput" class="dimension-input" placeholder="高" value="1">
+                                <div class="grid grid-cols-3 gap-2">
+                                    <input type="number" id="lengthInput" class="dimension-input" placeholder="长" value="1" step="0.1">
+                                    <input type="number" id="widthInput" class="dimension-input" placeholder="宽" value="1" step="0.1">
+                                    <input type="number" id="heightInput" class="dimension-input" placeholder="高" value="1" step="0.1">
                                 </div>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium mb-2">物流渠道</label>
-                                <div class="shipping-option selected" onclick="selectShipping('economy')">
-                                    <input type="radio" name="shipping" value="economy" checked>
-                                    <span>经济物流</span>
-                                </div>
-                                <div class="shipping-option" onclick="selectShipping('standard')">
-                                    <input type="radio" name="shipping" value="standard">
-                                    <span>标准物流</span>
+                                <div class="space-y-2">
+                                    <div class="shipping-option selected" onclick="selectShipping('economy')">
+                                        <input type="radio" name="shipping" value="economy" checked>
+                                        <span>经济物流</span>
+                                    </div>
+                                    <div class="shipping-option" onclick="selectShipping('standard')">
+                                        <input type="radio" name="shipping" value="standard">
+                                        <span>标准物流</span>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -487,7 +500,15 @@
                                 </div>
                                 <div class="result-item">
                                     <span>净收入</span>
-                                    <span id="netIncome">¥0.00</span>
+                                    <span id="netIncome">€0.00</span>
+                                </div>
+                                <div class="result-item">
+                                    <span>体积重</span>
+                                    <span id="volumeWeight">0.00 kg</span>
+                                </div>
+                                <div class="result-item">
+                                    <span>计费重量</span>
+                                    <span id="chargeableWeight">0.00 kg</span>
                                 </div>
                                 <div class="result-item">
                                     <span>物流费</span>
@@ -1102,7 +1123,109 @@
 
         // 初始状态隐藏结果区域，只有上传文件后才显示
         // results.classList.remove("hidden");
-        // populateUngroupedProducts();    </script>
+        // populateUngroupedProducts();
+
+        // 德国利润计算器功能
+        let selectedShippingMethod = 'economy';
+
+        function selectShipping(method) {
+            selectedShippingMethod = method;
+            
+            // 更新UI显示
+            document.querySelectorAll('.shipping-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            document.querySelector(`.shipping-option input[value="${method}"]`).parentElement.classList.add('selected');
+            document.querySelector(`.shipping-option input[value="${method}"]`).checked = true;
+        }
+
+        function calculateProfit() {
+            // 获取输入值
+            const priceExcludingTax = parseFloat(document.getElementById('priceInput').value) || 0;
+            const actualWeight = parseFloat(document.getElementById('weightInput').value) || 0;
+            const purchaseCost = parseFloat(document.getElementById('costInput').value) || 0;
+            const length = parseFloat(document.getElementById('lengthInput').value) || 0;
+            const width = parseFloat(document.getElementById('widthInput').value) || 0;
+            const height = parseFloat(document.getElementById('heightInput').value) || 0;
+
+            // 验证输入
+            if (priceExcludingTax <= 0) {
+                alert('请输入有效的不含税价');
+                return;
+            }
+
+            // 1. 含税价 = 不含税价 × 1.19
+            const taxIncludedPrice = priceExcludingTax * 1.19;
+
+            // 2. 净收入 = 不含税价 - MP费(固定0.35€/笔) - 成交费(含税价×12%) - 跨国交易费(含税价×1.75%)
+            const mpFee = 0.35;
+            const transactionFee = taxIncludedPrice * 0.12;
+            const crossBorderFee = taxIncludedPrice * 0.0175;
+            const netIncome = priceExcludingTax - mpFee - transactionFee - crossBorderFee;
+
+            // 体积重计算：(长cm*宽cm*高cm)/6000
+            const volumeWeight = (length * width * height) / 6000;
+
+            // 计费重量：取实际重量和体积重的较大值
+            const chargeableWeight = Math.max(actualWeight, volumeWeight);
+
+            // 3. 物流费计算
+            let shippingCost = 0;
+            if (selectedShippingMethod === 'economy') {
+                // 经济物流：=IF(H12<=0.1,(H12*148)+7.7,IF(AND(H12>=0.1,H12<=2),(H12*148)+9.2,1000))
+                if (chargeableWeight <= 0.1) {
+                    shippingCost = (chargeableWeight * 148) + 7.7;
+                } else if (chargeableWeight >= 0.1 && chargeableWeight <= 2) {
+                    shippingCost = (chargeableWeight * 148) + 9.2;
+                } else {
+                    shippingCost = 1000;
+                }
+            } else {
+                // 标准物流：=IF(H12<=0.4,(H12*126.7)+16.4,IF(AND(H12>0.4,H12<=30),(H12*111.2)+22.6,1000))
+                if (chargeableWeight <= 0.4) {
+                    shippingCost = (chargeableWeight * 126.7) + 16.4;
+                } else if (chargeableWeight > 0.4 && chargeableWeight <= 30) {
+                    shippingCost = (chargeableWeight * 111.2) + 22.6;
+                } else {
+                    shippingCost = 1000;
+                }
+            }
+
+            // 4. 利润 = 净收入 - 物流费 - 采购价
+            // 注意：物流费需要转换为人民币，采购价已经是人民币
+            const eurToRmbRate = 7.28; // 欧元到人民币汇率
+            const shippingCostRmb = shippingCost * eurToRmbRate;
+            const profit = netIncome * eurToRmbRate - shippingCostRmb - purchaseCost;
+
+            // 5. 利润率 = 利润 / (不含税价 × 7.28)
+            const profitMargin = (profit / (priceExcludingTax * eurToRmbRate)) * 100;
+
+            // 显示结果
+            document.getElementById('taxIncludedPrice').textContent = `€${taxIncludedPrice.toFixed(2)}`;
+            document.getElementById('netIncome').textContent = `€${netIncome.toFixed(2)}`;
+            document.getElementById('volumeWeight').textContent = `${volumeWeight.toFixed(3)} kg`;
+            document.getElementById('chargeableWeight').textContent = `${chargeableWeight.toFixed(3)} kg`;
+            document.getElementById('shippingCost').textContent = `¥${shippingCostRmb.toFixed(2)}`;
+            document.getElementById('profitAmount').textContent = `¥${profit.toFixed(2)}`;
+            document.getElementById('profitMargin').textContent = `${profitMargin.toFixed(2)}%`;
+
+            // 显示结果区域
+            document.getElementById('profitResult').classList.remove('hidden');
+        }
+
+        // 绑定计算按钮事件
+        document.getElementById('calculateBtn').addEventListener('click', calculateProfit);
+
+        // 绑定输入框回车事件
+        document.querySelectorAll('.calculator-input, .dimension-input').forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    calculateProfit();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
 
