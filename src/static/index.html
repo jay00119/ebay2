@@ -146,27 +146,25 @@
             transform: scale(1.05);
         }
         .stat-card {
-            background: white;
+            background: linear-gradient(to bottom right, #f43f5e, #ec4899) !important;
+            color: white !important;
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 24px;
+            padding: 19.2px;
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
         }
-        .stat-icon {
-            font-size: 2rem;
-            margin-bottom: 12px;
-        }
         .stat-number {
             font-size: 2.5rem;
             font-weight: bold;
             margin-bottom: 8px;
+            color: white !important;
         }
         .stat-label {
-            color: #6b7280;
+            color: white !important;
             font-size: 0.875rem;
         }
         /* 隐藏数字输入框的上下按钮 */
@@ -529,15 +527,15 @@
                     <input type="number" id="keywordCountInput" class="w-20 px-3 py-2 border border-gray-300 rounded-lg text-center" value="50" min="1" max="50">
                 </div>
                 <div class="flex space-x-4">
-                    <button id="startAnalysisBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                    <button id="startAnalysisBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center shadow-md">
                         <i class="fas fa-play mr-2"></i>
                         开始分析
                     </button>
-                    <button id="clearAnalysisBtn" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                    <button id="clearAnalysisBtn" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center shadow-md">
                         <i class="fas fa-times mr-2"></i>
                         清空
                     </button>
-                    <button id="copyAllAnalysisBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center" onclick="copyAllAnalysisData()">
+                    <button id="copyAllAnalysisBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center shadow-md" onclick="copyAllAnalysisData()">
                         <i class="fas fa-copy mr-2"></i>
                         一键复制
                     </button>
@@ -556,19 +554,19 @@
                 <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">分析结果</h2>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                        <div class="stat-card bg-gradient-to-br from-pink-500 to-purple-600 text-white">
+                        <div class="stat-card">
                             <div class="stat-number" id="totalWordsCount">0</div>
                             <div class="stat-label">总词数</div>
                         </div>
-                        <div class="stat-card bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
+                        <div class="stat-card">
                             <div class="stat-number" id="uniqueWordsCount">0</div>
                             <div class="stat-label">唯一词数</div>
                         </div>
-                        <div class="stat-card bg-gradient-to-br from-indigo-500 to-blue-600 text-white">
+                        <div class="stat-card">
                             <div class="stat-number" id="analyzedKeywordsCount">0</div>
                             <div class="stat-label">分析关键词</div>
                         </div>
-                        <div class="stat-card bg-gradient-to-br from-blue-500 to-green-600 text-white">
+                        <div class="stat-card">
                             <div class="stat-number" id="scrapedTitlesCount">0</div>
                             <div class="stat-label">抓取标题数</div>
                         </div>
@@ -1071,7 +1069,7 @@
             });
 
             try {
-                const API_BASE_URL = "https://5000-idw0vld9g1ea8ox9ao5ao-0ae160a9.manus.computer";
+                const API_BASE_URL = "https://5000-ioyc4fn90ucj2ndq0sfv4-a1ec68e0.manusvm.computer";
                 const response = await fetch(`${API_BASE_URL}/api/csv/upload`, {
                     method: "POST",
                     body: formData,
@@ -1370,8 +1368,7 @@
         function showCopySuccess(groupNumber, count) {
             const button = document.querySelector(`#content2 button[onclick="copyGroupItemIds(${groupNumber}); event.stopPropagation();"]`);
             if (!button) return;
-            
-            const originalText = button.innerHTML;
+                         const originalText = `<i class="fas fa-copy mr-2"></i>一键复制`;
             
             button.innerHTML = `<i class="fas fa-check mr-1"></i>已复制 ${count} 个ID`;
             button.style.background = '#10b981';
@@ -1598,7 +1595,7 @@
             startAnalysisBtn.innerHTML = '<i class="fas fa-spinner loading mr-2"></i>分析中...';
 
             try {
-                const API_BASE_URL = "https://5000-idw0vld9g1ea8ox9ao5ao-0ae160a9.manus.computer";
+                const API_BASE_URL = "https://5000-ioyc4fn90ucj2ndq0sfv4-a1ec68e0.manusvm.computer";
                 const response = await fetch(`${API_BASE_URL}/api/scraper/scrape`, {
                     method: 'POST',
                     headers: {
@@ -1665,7 +1662,7 @@
             scrapingResults = null; // Clear stored results
         }
 
-        function copyAllAnalysisData()         function copyAllAnalysisData() {
+        function copyAllAnalysisData() {
             if (!scrapingResults) {
                 const copyMessage = document.getElementById("copyMessage");
                 copyMessage.classList.remove("hidden");
@@ -1691,34 +1688,27 @@
             });
 
             navigator.clipboard.writeText(copyTextContent).then(() => {
-                const button = document.getElementById('copyAllAnalysisBtn');
-                const originalText = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-check mr-2"></i>已复制';
-                button.classList.remove('bg-green-600', 'hover:bg-green-700');
-                button.classList.add('bg-green-500');
+                const button = document.getElementById("copyAllAnalysisBtn");
+                const originalText = `<i class="fas fa-copy mr-2"></i>一键复制`;
+                button.innerHTML = `<i class="fas fa-check mr-2"></i>已复制`;
+                button.classList.remove("bg-green-600", "hover:bg-green-700");
+                button.classList.add("bg-green-500");
                 setTimeout(() => {
                     button.innerHTML = originalText;
-                    button.classList.remove('bg-green-500');
-                    button.classList.add('bg-green-600', 'hover:bg-green-700');
-                }, 2000);
+                    button.classList.remove("bg-green-500");
+                    button.classList.add("bg-green-600", "hover:bg-green-700");
+                }, 2000); // 2秒后恢复
             }).catch(err => {
-                console.error('复制失败:', err);
-                alert('复制失败，请手动复制。');
-            });   }
+                console.error("复制失败:", err);
+                alert("复制失败，请手动复制。");
+            });
 
         // Initialize with tab1 active
         document.addEventListener('DOMContentLoaded', () => {
             switchMainTab('tab1');
         });
     </script>
+
 </body>
 </html>
-
-
-
-
-    <div id="copyMessage" class="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg hidden">
-        没有可复制的分析结果。
-    </div>
-
 

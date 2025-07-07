@@ -243,7 +243,7 @@ def scrape_titles():
         # 翻译为英文和中文
         print("开始翻译...")
         english_translations = translate_words_batch(top_words, 'en')
-        chinese_translations = translate_words_batch(top_words, 'zh')
+        chinese_translations = translate_words_batch(top_words, 'zh-CN')
         
         # 准备返回数据
         total_words = sum(word_counts.values())
@@ -254,7 +254,7 @@ def scrape_titles():
             'all_titles_count': len(titles),
             'word_analysis': {
                 'total_words': total_words,
-                'unique_words': len(top_words),
+                'unique_words': len(word_counts),
                 'top_words': [
                     {
                         'word': word,
