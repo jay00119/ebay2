@@ -79,7 +79,7 @@
             padding: 12px;
         }
         .group-item::before {
-            content: \'\';
+            content: '';
             position: absolute;
             top: 0;
             left: 0;
@@ -151,6 +151,10 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             padding: 24px;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         .stat-icon {
             font-size: 2rem;
@@ -488,20 +492,6 @@
             background: #2563eb;
         }
     </style>
-    <script>
-        // Main Tab handling
-        function switchMainTab(tabId) {
-            document.querySelectorAll(".tab-button").forEach(button => {
-                button.classList.remove("active");
-            });
-            document.querySelectorAll(".tab-content").forEach(content => {
-                content.classList.add("hidden");
-            });
-
-            document.getElementById(tabId).classList.add("active");
-            document.getElementById(`content${tabId.slice(-1)}`).classList.remove("hidden");
-        }
-    </script>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Header -->
@@ -523,11 +513,86 @@
             <button id="tab2" class="tab-button" onclick="switchMainTab('tab2')">eBay爆款分析器</button>
         </div>
 
-        <!-- Tab Content 1: Under Development -->
+        <!-- Tab Content 1: One-Click Analysis Tool -->
         <div id="content1" class="tab-content">
-            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
-                <i class="fas fa-tools text-6xl text-gray-400 mb-4"></i>
-                <p class="text-xl text-gray-600">此功能正在开发中，敬请期待！</p>
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-search text-blue-600 mr-2"></i>
+                    一键分析
+                </h2>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">eBay商品列表页URL</label>
+                    <input type="url" id="scraperUrlInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="例如: https://www.ebay.de/b/Smart-Home-Beleuchtungen/185044/bn_115383452">
+                </div>
+                <div class="flex items-center mb-4">
+                    <label class="text-sm font-medium text-gray-700 mr-2">显示关键词数量:</label>
+                    <input type="number" id="keywordCountInput" class="w-20 px-3 py-2 border border-gray-300 rounded-lg text-center" value="50" min="1" max="50">
+                </div>
+                <div class="flex space-x-4">
+                    <button id="startAnalysisBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                        <i class="fas fa-play mr-2"></i>
+                        开始分析
+                    </button>
+                    <button id="clearAnalysisBtn" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                        <i class="fas fa-times mr-2"></i>
+                        清空
+                    </button>
+                    <button id="copyAllAnalysisBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                        <i class="fas fa-copy mr-2"></i>
+                        一键复制
+                    </button>
+                </div>
+            </div>
+
+            <!-- Analysis Progress -->
+            <div id="analysisProgress" class="hidden bg-white rounded-lg shadow-sm p-8 text-center mb-8">
+                <i class="fas fa-spinner loading text-4xl text-blue-600 mb-4"></i>
+                <p class="text-lg text-gray-600">正在分析商品标题...</p>
+                <p class="text-sm text-gray-500 mt-2">这可能需要几分钟时间</p>
+            </div>
+
+            <!-- Analysis Results -->
+            <div id="analysisResults" class="hidden">
+                <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">分析结果</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div class="stat-card bg-gradient-to-br from-pink-500 to-purple-600 text-white">
+                            <div class="stat-number" id="totalWordsCount">0</div>
+                            <div class="stat-label">总词数</div>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
+                            <div class="stat-number" id="uniqueWordsCount">0</div>
+                            <div class="stat-label">唯一词数</div>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-indigo-500 to-blue-600 text-white">
+                            <div class="stat-number" id="analyzedKeywordsCount">0</div>
+                            <div class="stat-label">分析关键词</div>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-blue-500 to-green-600 text-white">
+                            <div class="stat-number" id="scrapedTitlesCount">0</div>
+                            <div class="stat-label">抓取标题数</div>
+                        </div>
+                    </div>
+
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">关键词分析结果</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-gradient-to-br from-blue-600 to-purple-700 rounded-lg shadow-md text-white">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider">排名</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider">关键词</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider">词频</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider">英语翻译</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider">中文翻译</th>
+                                </tr>
+                            </thead>
+                            <tbody id="keywordsTable" class="divide-y divide-blue-400 divide-opacity-50">
+                                <!-- Keywords will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -834,6 +899,20 @@
     </div>
 
     <script>
+        // Main Tab handling
+        function switchMainTab(tabId) {
+            document.querySelectorAll(".tab-button").forEach(button => {
+                button.classList.remove("active");
+            });
+            document.querySelectorAll(".tab-content").forEach(content => {
+                content.classList.add("hidden");
+            });
+
+            document.getElementById(tabId).classList.add("active");
+            document.getElementById(`content${tabId.slice(-1)}`).classList.remove("hidden");
+        }
+
+        // --- eBay Analyzer functionality ---
         let selectedFiles = [];
         let analysisResults = null;
         let currentTab = 'similar';
@@ -858,19 +937,19 @@
         const profitResult = document.getElementById('profitResult');
 
         // File upload handling
-        uploadArea.addEventListener('click', () => fileInput.click());
-        uploadArea.addEventListener('dragover', handleDragOver);
-        uploadArea.addEventListener('dragleave', handleDragLeave);
-        uploadArea.addEventListener('drop', handleDrop);
-        fileInput.addEventListener('change', handleFileSelect);
-        uploadBtn.addEventListener('click', uploadFiles);
+        if (uploadArea) uploadArea.addEventListener('click', () => fileInput.click());
+        if (uploadArea) uploadArea.addEventListener('dragover', handleDragOver);
+        if (uploadArea) uploadArea.addEventListener('dragleave', handleDragLeave);
+        if (uploadArea) uploadArea.addEventListener('drop', handleDrop);
+        if (fileInput) fileInput.addEventListener('change', handleFileSelect);
+        if (uploadBtn) uploadBtn.addEventListener('click', uploadFiles);
 
         // Tab handling (inner tabs)
-        similarTab.addEventListener('click', () => switchTab('similar'));
-        ungroupedTab.addEventListener('click', () => switchTab('ungrouped'));
+        if (similarTab) similarTab.addEventListener('click', () => switchTab('similar'));
+        if (ungroupedTab) ungroupedTab.addEventListener('click', () => switchTab('ungrouped'));
 
         // Calculator handling
-        calculateBtn.addEventListener('click', calculateProfit);
+        if (calculateBtn) calculateBtn.addEventListener('click', calculateProfit);
 
         function handleDragOver(e) {
             e.preventDefault();
@@ -993,7 +1072,7 @@
             });
 
             try {
-                const API_BASE_URL = "https://5000-ic48avy6kw0br1hpa09fb-d0bf6488.manusvm.computer";
+                const API_BASE_URL = "https://5000-ikc5eavjim521b462xsxx-1fbd280f.manus.computer";
                 const response = await fetch(`${API_BASE_URL}/api/csv/upload`, {
                     method: "POST",
                     body: formData,
@@ -1464,7 +1543,9 @@
         }
 
         // 绑定计算按钮事件
-        document.getElementById('calculateBtn').addEventListener('click', calculateProfit);
+        if (document.getElementById('calculateBtn')) {
+            document.getElementById('calculateBtn').addEventListener('click', calculateProfit);
+        }
 
         // 绑定输入框回车事件 - 修复为新的类名
         document.querySelectorAll('#content2 .compact-input, #content2 .mini-input').forEach(input => {
@@ -1474,6 +1555,145 @@
                 }
             });
         });
+
+        // --- Title Scraper functionality ---
+        let scrapingResults = null;
+        let currentScraperTab = 'titles';
+
+        // DOM elements for scraper
+        const startAnalysisBtn = document.getElementById('startAnalysisBtn');
+        const clearAnalysisBtn = document.getElementById('clearAnalysisBtn');
+        const copyAllAnalysisBtn = document.getElementById('copyAllAnalysisBtn');
+        const analysisProgress = document.getElementById('analysisProgress');
+        const analysisResultsDiv = document.getElementById('analysisResults');
+
+        // Event listeners for scraper
+        if (startAnalysisBtn) {
+            startAnalysisBtn.addEventListener('click', startAnalysis);
+        }
+        if (clearAnalysisBtn) {
+            clearAnalysisBtn.addEventListener('click', clearAnalysisResults);
+        }
+        if (copyAllAnalysisBtn) {
+            copyAllAnalysisBtn.addEventListener('click', copyAllAnalysisData);
+        }
+
+        async function startAnalysis() {
+            const url = document.getElementById('scraperUrlInput').value.trim();
+            const keywordCount = parseInt(document.getElementById('keywordCountInput').value);
+
+            if (!url) {
+                alert('请输入有效的eBay URL');
+                return;
+            }
+
+            if (!url.includes('ebay')) {
+                alert('请输入有效的eBay URL');
+                return;
+            }
+
+            // Show progress
+            analysisProgress.classList.remove('hidden');
+            analysisResultsDiv.classList.add('hidden');
+            startAnalysisBtn.disabled = true;
+            startAnalysisBtn.innerHTML = '<i class="fas fa-spinner loading mr-2"></i>分析中...';
+
+            try {
+                const API_BASE_URL = "https://5000-ikc5eavjim521b462xsxx-1fbd280f.manus.computer";
+                const response = await fetch(`${API_BASE_URL}/api/scraper/scrape`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        max_pages: 4 // Always scrape 4 pages for this tool
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                scrapingResults = await response.json();
+                console.log("Scraping Results:", scrapingResults);
+
+                // Update summary stats
+                document.getElementById('totalWordsCount').textContent = scrapingResults.word_analysis.total_words;
+                document.getElementById('uniqueWordsCount').textContent = scrapingResults.word_analysis.unique_words;
+                document.getElementById('analyzedKeywordsCount').textContent = keywordCount; // Display user-selected count
+                document.getElementById('scrapedTitlesCount').textContent = scrapingResults.total_titles;
+
+                // Populate keywords table
+                const keywordsTable = document.getElementById('keywordsTable');
+                keywordsTable.innerHTML = ''; // Clear previous results
+                const topWords = scrapingResults.word_analysis.top_words.slice(0, keywordCount); // Limit to user-selected count
+                topWords.forEach((wordData, index) => {
+                    const row = keywordsTable.insertRow();
+                    row.className = 'bg-white bg-opacity-10 hover:bg-opacity-20 transition-colors';
+                    row.innerHTML = `
+                        <td class="px-4 py-2 text-sm font-medium">${index + 1}</td>
+                        <td class="px-4 py-2 text-sm">${wordData.word}</td>
+                        <td class="px-4 py-2 text-sm">${wordData.count}</td>
+                        <td class="px-4 py-2 text-sm">${wordData.english}</td>
+                        <td class="px-4 py-2 text-sm">${wordData.chinese}</td>
+                    `;
+                });
+
+                analysisProgress.classList.add('hidden');
+                analysisResultsDiv.classList.remove('hidden');
+                analysisResultsDiv.classList.add('fade-in');
+
+            } catch (error) {
+                console.error("Error during analysis:", error);
+                alert("分析失败: " + error.message);
+                analysisProgress.classList.add('hidden');
+            } finally {
+                startAnalysisBtn.disabled = false;
+                startAnalysisBtn.innerHTML = '<i class="fas fa-play mr-2"></i>开始分析';
+            }
+        }
+
+        function clearAnalysisResults() {
+            document.getElementById('scraperUrlInput').value = '';
+            document.getElementById('keywordCountInput').value = '50';
+            document.getElementById('totalWordsCount').textContent = '0';
+            document.getElementById('uniqueWordsCount').textContent = '0';
+            document.getElementById('analyzedKeywordsCount').textContent = '0';
+            document.getElementById('scrapedTitlesCount').textContent = '0';
+            document.getElementById('keywordsTable').innerHTML = '';
+            analysisResultsDiv.classList.add('hidden');
+            scrapingResults = null; // Clear stored results
+        }
+
+        function copyAllAnalysisData() {
+            if (!scrapingResults) {
+                alert('没有可复制的分析结果。');
+                return;
+            }
+
+            let copyTextContent = '';
+
+            // Summary Stats
+            copyTextContent += `总词数: ${scrapingResults.word_analysis.total_words}\n`;
+            copyTextContent += `唯一词数: ${scrapingResults.word_analysis.unique_words}\n`;
+            copyTextContent += `分析关键词: ${document.getElementById('analyzedKeywordsCount').textContent}\n`;
+            copyTextContent += `抓取标题数: ${scrapingResults.total_titles}\n\n`;
+
+            // Keywords Table
+            copyTextContent += '排名\t关键词\t词频\t英语翻译\t中文翻译\n';
+            const topWords = scrapingResults.word_analysis.top_words.slice(0, parseInt(document.getElementById('keywordCountInput').value));
+            topWords.forEach((wordData, index) => {
+                copyTextContent += `${index + 1}\t${wordData.word}\t${wordData.count}\t${wordData.english}\t${wordData.chinese}\n`;
+            });
+
+            navigator.clipboard.writeText(copyTextContent).then(() => {
+                alert('所有分析数据已复制到剪贴板！');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制。');
+            });
+        }
 
         // Initialize with tab1 active
         document.addEventListener('DOMContentLoaded', () => {

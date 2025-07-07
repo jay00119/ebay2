@@ -8,6 +8,7 @@ from flask_cors import CORS
 from src.models.user import db
 from src.routes.user import user_bp
 from src.routes.csv_analyzer_simple import csv_analyzer_bp
+from src.routes.title_scraper import title_scraper_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
@@ -17,6 +18,7 @@ CORS(app)
 
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(csv_analyzer_bp, url_prefix='/api/csv')
+app.register_blueprint(title_scraper_bp, url_prefix='/api/scraper')
 
 # uncomment if you need to use database
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
