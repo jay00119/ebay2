@@ -42,15 +42,23 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .tab-active {
-            background-color: #3b82f6;
-            color: white;
-            border-bottom: 2px solid #3b82f6;
-        }
-        .tab-inactive {
-            background-color: transparent;
+        .tab-button {
+            padding: 12px 24px;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
             color: #6b7280;
-            border-bottom: 2px solid transparent;
+        }
+        .tab-button.active {
+            color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        .tab-content {
+            padding-top: 20px;
+        }
+        .tab-content.hidden {
+            display: none;
         }
         .calculator-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -71,7 +79,7 @@
             padding: 12px;
         }
         .group-item::before {
-            content: '';
+            content: \'\';
             position: absolute;
             top: 0;
             left: 0;
@@ -81,7 +89,7 @@
             pointer-events: none;
         }
         .group-item:hover {
-            transform: translateY(-2px) scale(1.02);
+            transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(102, 126, 234, 0.25);
         }
         .group-item.active {
@@ -89,7 +97,7 @@
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
         .group-item.active:hover {
-            transform: translateY(-2px) scale(1.02);
+            transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
         }
         .group-item-content {
@@ -480,6 +488,20 @@
             background: #2563eb;
         }
     </style>
+    <script>
+        // Main Tab handling
+        function switchMainTab(tabId) {
+            document.querySelectorAll(".tab-button").forEach(button => {
+                button.classList.remove("active");
+            });
+            document.querySelectorAll(".tab-content").forEach(content => {
+                content.classList.add("hidden");
+            });
+
+            document.getElementById(tabId).classList.add("active");
+            document.getElementById(`content${tabId.slice(-1)}`).classList.remove("hidden");
+        }
+    </script>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Header -->
@@ -495,297 +517,314 @@
     </header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Upload Section -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <i class="fas fa-upload text-yellow-600 mr-2"></i>
-                上传文件
-            </h2>
-            <div id="uploadArea" class="upload-area rounded-lg p-12 text-center cursor-pointer">
-                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
-                <p class="text-lg text-gray-600 mb-2">拖拽CSV文件到此处，或点击选择文件</p>
-                <p class="text-sm text-gray-500">支持多个文件同时上传</p>
-                <input type="file" id="fileInput" multiple accept=".csv" class="hidden">
-            </div>
-            
-            <!-- Selected Files -->
-            <div id="selectedFiles" class="mt-4 hidden">
-                <h3 class="text-sm font-medium text-gray-700 mb-2">已选择的文件:</h3>
-                <div id="fileList" class="space-y-2"></div>
-            </div>
-            
-            <!-- Upload Button -->
-            <div class="mt-6">
-                <button id="uploadBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled>
-                    <i class="fas fa-play mr-2"></i>
-                    开始分析
-                </button>
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button id="tab1" class="tab-button active" onclick="switchMainTab('tab1')">开发中</button>
+            <button id="tab2" class="tab-button" onclick="switchMainTab('tab2')">eBay爆款分析器</button>
+        </div>
+
+        <!-- Tab Content 1: Under Development -->
+        <div id="content1" class="tab-content">
+            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <i class="fas fa-tools text-6xl text-gray-400 mb-4"></i>
+                <p class="text-xl text-gray-600">此功能正在开发中，敬请期待！</p>
             </div>
         </div>
 
-        <!-- Loading -->
-        <div id="loading" class="hidden bg-white rounded-lg shadow-sm p-8 text-center">
-            <i class="fas fa-spinner loading text-4xl text-blue-600 mb-4"></i>
-            <p class="text-lg text-gray-600">正在分析数据和图片相似度...</p>
-            <p class="text-sm text-gray-500 mt-2">这可能需要几分钟时间</p>
-        </div>
-
-        <!-- Results -->
-        <div id="results" class="hidden">
-            <!-- Summary Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="stat-card">
-                    <div class="stat-icon text-blue-600">
-                        <i class="fas fa-box"></i>
-                    </div>
-                    <div class="stat-number text-gray-900" id="totalProducts">50</div>
-                    <div class="stat-label">总商品数</div>
+        <!-- Tab Content 2: Existing eBay Analyzer -->
+        <div id="content2" class="tab-content hidden">
+            <!-- Upload Section -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-upload text-yellow-600 mr-2"></i>
+                    上传文件
+                </h2>
+                <div id="uploadArea" class="upload-area rounded-lg p-12 text-center cursor-pointer">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-lg text-gray-600 mb-2">拖拽CSV文件到此处，或点击选择文件</p>
+                    <p class="text-sm text-gray-500">支持多个文件同时上传</p>
+                    <input type="file" id="fileInput" multiple accept=".csv" class="hidden">
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon text-green-600">
-                        <i class="fas fa-layer-group"></i>
-                    </div>
-                    <div class="stat-number text-gray-900" id="similarGroups">2</div>
-                    <div class="stat-label">相似组数</div>
+                
+                <!-- Selected Files -->
+                <div id="selectedFiles" class="mt-4 hidden">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">已选择的文件:</h3>
+                    <div id="fileList" class="space-y-2"></div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon text-yellow-600">
-                        <i class="fas fa-euro-sign"></i>
-                    </div>
-                    <div class="stat-number text-gray-900" id="totalSales">€4676.00</div>
-                    <div class="stat-label">总销售额</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon text-purple-600">
-                        <i class="fas fa-shopping-cart"></i>
-                    </div>
-                    <div class="stat-number text-gray-900" id="totalVolume">126</div>
-                    <div class="stat-label">总销量</div>
+                
+                <!-- Upload Button -->
+                <div class="mt-6">
+                    <button id="uploadBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled>
+                        <i class="fas fa-play mr-2"></i>
+                        开始分析
+                    </button>
                 </div>
             </div>
 
-            <!-- Main Content Area -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Left Column: Product Groups -->
-                <div class="lg:col-span-1">
-                    <!-- Product Groups List -->
-                    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                            <i class="fas fa-list text-blue-600 mr-2"></i>
-                            商品组列表
-                        </h2>
-                        <div id="groupsSummary" class="text-sm text-gray-600 mb-4">
-                            共发现 <span id="groupsCount">2</span> 个相似商品组
+            <!-- Loading -->
+            <div id="loading" class="hidden bg-white rounded-lg shadow-sm p-8 text-center">
+                <i class="fas fa-spinner loading text-4xl text-blue-600 mb-4"></i>
+                <p class="text-lg text-gray-600">正在分析数据和图片相似度...</p>
+                <p class="text-sm text-gray-500 mt-2">这可能需要几分钟时间</p>
+            </div>
+
+            <!-- Results -->
+            <div id="results" class="hidden">
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="stat-card">
+                        <div class="stat-icon text-blue-600">
+                            <i class="fas fa-box"></i>
                         </div>
-                        <div id="groupsList" class="grid grid-cols-3 gap-3">
-                            <div class="group-item rounded-lg p-3">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <div class="font-medium text-gray-900">组 1</div>
-                                        <div class="text-sm text-gray-600">2 个商品</div>
-                                    </div>
-                                    <button class="copy-group-btn" onclick="copyGroupItemIds(1)">
-                                        <i class="fas fa-copy mr-1"></i>一键复制
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="group-item rounded-lg p-3">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <div class="font-medium text-gray-900">组 2</div>
-                                        <div class="text-sm text-gray-600">2 个商品</div>
-                                    </div>
-                                    <button class="copy-group-btn" onclick="copyGroupItemIds(2)">
-                                        <i class="fas fa-copy mr-1"></i>一键复制
-                                    </button>
-                                </div>
-                            </div>
+                        <div class="stat-number text-gray-900" id="totalProducts">50</div>
+                        <div class="stat-label">总商品数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon text-green-600">
+                            <i class="fas fa-layer-group"></i>
                         </div>
+                        <div class="stat-number text-gray-900" id="similarGroups">2</div>
+                        <div class="stat-label">相似组数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon text-yellow-600">
+                            <i class="fas fa-euro-sign"></i>
+                        </div>
+                        <div class="stat-number text-gray-900" id="totalSales">€4676.00</div>
+                        <div class="stat-label">总销售额</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon text-purple-600">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="stat-number text-gray-900" id="totalVolume">126</div>
+                        <div class="stat-label">总销量</div>
                     </div>
                 </div>
 
-                <!-- Right Column: Product Details -->
-                <div class="lg:col-span-2">
-                    <!-- German Profit Calculator -->
-                    <div class="calculator-section rounded-lg shadow-sm p-4 text-white mb-4">
-                        <h2 class="text-lg font-semibold mb-3 flex items-center">
-                            <i class="fas fa-calculator mr-2"></i>
-                            德国利润计算器
-                        </h2>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Left Half: Input Fields -->
-                            <div class="space-y-2">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">不含税价 (€)</label>
-                                        <input type="number" id="priceInput" class="compact-input" placeholder="0.00" step="0.01">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">实际重量 (kg)</label>
-                                        <input type="number" id="weightInput" class="compact-input" placeholder="0.00" step="0.01">
-                                    </div>
-                                </div>
-                                
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">采购成本 (¥)</label>
-                                        <input type="number" id="costInput" class="compact-input" placeholder="0.00" step="0.01">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">尺寸 (cm)</label>
-                                        <div class="grid grid-cols-3 gap-1">
-                                            <input type="number" id="lengthInput" class="mini-input" placeholder="1" value="1" step="0.1">
-                                            <input type="number" id="widthInput" class="mini-input" placeholder="1" value="1" step="0.1">
-                                            <input type="number" id="heightInput" class="mini-input" placeholder="1" value="1" step="0.1">
-                                        </div>
-                                    </div>
-                                </div>
+                <!-- Main Content Area -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Left Column: Product Groups -->
+                    <div class="lg:col-span-1">
+                        <!-- Product Groups List -->
+                        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                            <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                                <i class="fas fa-list text-blue-600 mr-2"></i>
+                                商品组列表
+                            </h2>
+                            <div id="groupsSummary" class="text-sm text-gray-600 mb-4">
+                                共发现 <span id="groupsCount">2</span> 个相似商品组
                             </div>
-
-                            <!-- Right Half: Shipping Options and Calculate Button -->
-                            <div class="space-y-2">
-                                <div>
-                                    <label class="block text-xs font-medium mb-1">物流渠道</label>
-                                    <div class="grid grid-cols-2 gap-1">
-                                        <div class="compact-shipping-option selected" onclick="selectShipping('economy')">
-                                            <input type="radio" name="shipping" value="economy" checked>
-                                            <span class="text-xs">经济物流</span>
+                            <div id="groupsList" class="grid grid-cols-3 gap-3">
+                                <div class="group-item rounded-lg p-3">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <div class="font-medium text-gray-900">组 1</div>
+                                            <div class="text-sm text-gray-600">2 个商品</div>
                                         </div>
-                                        <div class="compact-shipping-option" onclick="selectShipping('standard')">
-                                            <input type="radio" name="shipping" value="standard">
-                                            <span class="text-xs">标准物流</span>
-                                        </div>
+                                        <button class="copy-group-btn" onclick="copyGroupItemIds(1)">
+                                            <i class="fas fa-copy mr-1"></i>一键复制
+                                        </button>
                                     </div>
                                 </div>
-                                
-                                <div class="mt-3">
-                                    <button id="calculateBtn" class="compact-calculate-btn w-full">
-                                        <i class="fas fa-calculator mr-1"></i>
-                                        计算利润
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div id="profitResult" class="hidden mt-3 p-3 bg-white bg-opacity-20 rounded-lg">
-                            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-                                <div class="compact-result-item">
-                                    <span class="text-xs opacity-80">含税价</span>
-                                    <span id="taxIncludedPrice" class="font-medium">€0.00</span>
-                                </div>
-                                <div class="compact-result-item">
-                                    <span class="text-xs opacity-80">计费重量</span>
-                                    <span id="chargeableWeight" class="font-medium">0.00 kg</span>
-                                </div>
-                                <div class="compact-result-item">
-                                    <span class="text-xs opacity-80">物流费</span>
-                                    <span id="shippingCost" class="font-medium">¥0.00</span>
-                                </div>
-                                <div class="compact-result-item">
-                                    <span class="text-xs opacity-80">利润</span>
-                                    <span id="profitAmount" class="font-medium text-green-300">¥0.00</span>
-                                </div>
-                                <div class="compact-result-item">
-                                    <span class="text-xs opacity-80">利润率</span>
-                                    <span id="profitMargin" class="font-medium text-green-300">0.00%</span>
+                                <div class="group-item rounded-lg p-3">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <div class="font-medium text-gray-900">组 2</div>
+                                            <div class="text-sm text-gray-600">2 个商品</div>
+                                        </div>
+                                        <button class="copy-group-btn" onclick="copyGroupItemIds(2)">
+                                            <i class="fas fa-copy mr-1"></i>一键复制
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Tabs -->
-                    <div class="bg-white rounded-lg shadow-sm mb-6">
-                        <div class="flex border-b">
-                            <button id="similarTab" class="tab-active px-6 py-3 font-medium rounded-tl-lg transition-colors flex items-center">
-                                相似商品分组 <span id="similarCount" class="ml-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">2</span>
-                            </button>
-                            <button id="ungroupedTab" class="tab-inactive px-6 py-3 font-medium transition-colors flex items-center">
-                                未分组商品 <span id="ungroupedCount" class="ml-2 bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">46</span>
-                            </button>
-                        </div>
-                        
-                        <!-- Similar Products Tab Content -->
-                        <div id="similarContent" class="p-6">
-                            <div id="similarGroupsDetail">
-                                <!-- Group 1 -->
-                                <div id="group-1" class="similar-group rounded-lg p-6 mb-6">
-                                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                                        组 1 - 2 个相似商品
-                                    </h3>
-                                    <p class="text-sm text-gray-600 mb-4">这些商品被识别为相似商品，请根据图片、价格等因素人工判断选品。</p>
-                                    <div class="product-grid">
-                                        <div class="product-item">
-                                            <img src="https://i.ebayimg.com/images/g/mE8AAOSwr-xjBXck/s-l1200.jpg" alt="Anlasser Reparatursatz" class="product-image">
-                                            <div class="product-info">
-                                                <a href="#" class="product-title">Anlasser Reparatursatz für 16 Zahn Ritzel Briggs & Stratton 497606 696541 NEU !!</a>
-                                                <div class="product-details">
-                                                    <div class="detail-item">
-                                                        <span class="detail-label">税前价:</span>
-                                                        <span class="detail-value price-value">€15.66</span>
-                                                    </div>
-                                                    <div class="detail-item">
-                                                        <span class="detail-label">销量:</span>
-                                                        <span class="detail-value">0</span>
-                                                    </div>
-                                                    <div class="detail-item">
-                                                        <span class="detail-label">总额:</span>
-                                                        <span class="detail-value price-value">€100.00</span>
-                                                    </div>
-                                                    <div class="detail-item">
-                                                        <span class="detail-label">最近售出:</span>
-                                                        <span class="detail-value volume-value">6</span>
-                                                    </div>
-                                                    <div class="detail-item" style="grid-column: 1 / -1;">
-                                                        <span class="detail-label">Item ID:</span>
-                                                        <span class="detail-value text-purple-600">282639537944</span>
-                                                    </div>
-                                                </div>
-                                            </div>
+                    <!-- Right Column: Product Details -->
+                    <div class="lg:col-span-2">
+                        <!-- German Profit Calculator -->
+                        <div class="calculator-section rounded-lg shadow-sm p-4 text-white mb-4">
+                            <h2 class="text-lg font-semibold mb-3 flex items-center">
+                                <i class="fas fa-calculator mr-2"></i>
+                                德国利润计算器
+                            </h2>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Left Half: Input Fields -->
+                                <div class="space-y-2">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1">不含税价 (€)</label>
+                                            <input type="number" id="priceInput" class="compact-input" placeholder="0.00" step="0.01">
                                         </div>
-                                        <div class="product-item">
-                                            <img src="https://i.ebayimg.com/images/g/KMMAAOSwOZBlex63/s-l1200.jpg" alt="Anlasser Reparatursatz" class="product-image">
-                                            <div class="product-info">
-                                                <a href="#" class="product-title">Anlasser Reparatursatz für 16 Zahn Ritzel Briggs & Stratton 497606 696541</a>
-                                                <div class="product-details">
-                                                    <div class="detail-item">
-                                                        <span class="detail-label">税前价:</span>
-                                                        <span class="detail-value price-value">€15.88</span>
-                                                    </div>
-                                                    <div class="detail-item">
-                                                        <span class="detail-label">销量:</span>
-                                                        <span class="detail-value">0</span>
-                                                    </div>
-                                                    <div class="detail-item">
-                                                        <span class="detail-label">总额:</span>
-                                                        <span class="detail-value price-value">€100.00</span>
-                                                    </div>
-                                                    <div class="detail-item">
-                                                        <span class="detail-label">最近售出:</span>
-                                                        <span class="detail-value volume-value">3</span>
-                                                    </div>
-                                                    <div class="detail-item" style="grid-column: 1 / -1;">
-                                                        <span class="detail-label">Item ID:</span>
-                                                        <span class="detail-value text-purple-600">335699560402</span>
-                                                    </div>
-                                                </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1">实际重量 (kg)</label>
+                                            <input type="number" id="weightInput" class="compact-input" placeholder="0.00" step="0.01">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1">采购成本 (¥)</label>
+                                            <input type="number" id="costInput" class="compact-input" placeholder="0.00" step="0.01">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1">尺寸 (cm)</label>
+                                            <div class="grid grid-cols-3 gap-1">
+                                                <input type="number" id="lengthInput" class="mini-input" placeholder="1" value="1" step="0.1">
+                                                <input type="number" id="widthInput" class="mini-input" placeholder="1" value="1" step="0.1">
+                                                <input type="number" id="heightInput" class="mini-input" placeholder="1" value="1" step="0.1">
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Right Half: Shipping Options and Calculate Button -->
+                                <div class="space-y-2">
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1">物流渠道</label>
+                                        <div class="grid grid-cols-2 gap-1">
+                                            <div class="compact-shipping-option selected" onclick="selectShipping('economy')">
+                                                <input type="radio" name="shipping" value="economy" checked>
+                                                <span class="text-xs">经济物流</span>
+                                            </div>
+                                            <div class="compact-shipping-option" onclick="selectShipping('standard')">
+                                                <input type="radio" name="shipping" value="standard">
+                                                <span class="text-xs">标准物流</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <button id="calculateBtn" class="compact-calculate-btn w-full">
+                                            <i class="fas fa-calculator mr-1"></i>
+                                            计算利润
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="profitResult" class="hidden mt-3 p-3 bg-white bg-opacity-20 rounded-lg">
+                                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                                    <div class="compact-result-item">
+                                        <span class="text-xs opacity-80">含税价</span>
+                                        <span id="taxIncludedPrice" class="font-medium">€0.00</span>
+                                    </div>
+                                    <div class="compact-result-item">
+                                        <span class="text-xs opacity-80">计费重量</span>
+                                        <span id="chargeableWeight" class="font-medium">0.00 kg</span>
+                                    </div>
+                                    <div class="compact-result-item">
+                                        <span class="text-xs opacity-80">物流费</span>
+                                        <span id="shippingCost" class="font-medium">¥0.00</span>
+                                    </div>
+                                    <div class="compact-result-item">
+                                        <span class="text-xs opacity-80">利润</span>
+                                        <span id="profitAmount" class="font-medium text-green-300">¥0.00</span>
+                                    </div>
+                                    <div class="compact-result-item">
+                                        <span class="text-xs opacity-80">利润率</span>
+                                        <span id="profitMargin" class="font-medium text-green-300">0.00%</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        
-                        <!-- Ungrouped Products Tab Content -->
-                        <div id="ungroupedContent" class="p-6 hidden">
-                            <div id="ungroupedProductsList" class="product-grid">
-                                <!-- Sample ungrouped products will be populated here -->
-                            </div>
-                            <div class="text-center mt-8">
-                                <button class="copy-btn">
-                                    <i class="fas fa-copy mr-2"></i>
-                                    一键复制所有未分组商品 Item ID
+
+                        <!-- Tabs -->
+                        <div class="bg-white rounded-lg shadow-sm mb-6">
+                            <div class="flex border-b">
+                                <button id="similarTab" class="tab-active px-6 py-3 font-medium rounded-tl-lg transition-colors flex items-center">
+                                    相似商品分组 <span id="similarCount" class="ml-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">2</span>
                                 </button>
+                                <button id="ungroupedTab" class="tab-inactive px-6 py-3 font-medium transition-colors flex items-center">
+                                    未分组商品 <span id="ungroupedCount" class="ml-2 bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">46</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Similar Products Tab Content -->
+                            <div id="similarContent" class="p-6">
+                                <div id="similarGroupsDetail">
+                                    <!-- Group 1 -->
+                                    <div id="group-1" class="similar-group rounded-lg p-6 mb-6">
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                                            组 1 - 2 个相似商品
+                                        </h3>
+                                        <p class="text-sm text-gray-600 mb-4">这些商品被识别为相似商品，请根据图片、价格等因素人工判断选品。</p>
+                                        <div class="product-grid">
+                                            <div class="product-item">
+                                                <img src="https://i.ebayimg.com/images/g/mE8AAOSwr-xjBXck/s-l1200.jpg" alt="Anlasser Reparatursatz" class="product-image">
+                                                <div class="product-info">
+                                                    <a href="#" class="product-title">Anlasser Reparatursatz für 16 Zahn Ritzel Briggs & Stratton 497606 696541 NEU !!</a>
+                                                    <div class="product-details">
+                                                        <div class="detail-item">
+                                                            <span class="detail-label">税前价:</span>
+                                                            <span class="detail-value price-value">€15.66</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <span class="detail-label">销量:</span>
+                                                            <span class="detail-value">0</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <span class="detail-label">总额:</span>
+                                                            <span class="detail-value price-value">€100.00</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <span class="detail-label">最近售出:</span>
+                                                            <span class="detail-value volume-value">6</span>
+                                                        </div>
+                                                        <div class="detail-item" style="grid-column: 1 / -1;">
+                                                            <span class="detail-label">Item ID:</span>
+                                                            <span class="detail-value text-purple-600">282639537944</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="product-item">
+                                                <img src="https://i.ebayimg.com/images/g/KMMAAOSwOZBlex63/s-l1200.jpg" alt="Anlasser Reparatursatz" class="product-image">
+                                                <div class="product-info">
+                                                    <a href="#" class="product-title">Anlasser Reparatursatz für 16 Zahn Ritzel Briggs & Stratton 497606 696541</a>
+                                                    <div class="product-details">
+                                                        <div class="detail-item">
+                                                            <span class="detail-label">税前价:</span>
+                                                            <span class="detail-value price-value">€15.88</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <span class="detail-label">销量:</span>
+                                                            <span class="detail-value">0</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <span class="detail-label">总额:</span>
+                                                            <span class="detail-value price-value">€100.00</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <span class="detail-label">最近售出:</span>
+                                                            <span class="detail-value volume-value">3</span>
+                                                        </div>
+                                                        <div class="detail-item" style="grid-column: 1 / -1;">
+                                                            <span class="detail-label">Item ID:</span>
+                                                            <span class="detail-value text-purple-600">335699560402</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Ungrouped Products Tab Content -->
+                            <div id="ungroupedContent" class="p-6 hidden">
+                                <div id="ungroupedProductsList" class="product-grid">
+                                    <!-- Sample ungrouped products will be populated here -->
+                                </div>
+                                <div class="text-center mt-8">
+                                    <button class="copy-btn">
+                                        <i class="fas fa-copy mr-2"></i>
+                                        一键复制所有未分组商品 Item ID
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -826,7 +865,7 @@
         fileInput.addEventListener('change', handleFileSelect);
         uploadBtn.addEventListener('click', uploadFiles);
 
-        // Tab handling
+        // Tab handling (inner tabs)
         similarTab.addEventListener('click', () => switchTab('similar'));
         ungroupedTab.addEventListener('click', () => switchTab('ungrouped'));
 
@@ -846,7 +885,7 @@
         function handleDrop(e) {
             e.preventDefault();
             uploadArea.classList.remove('dragover');
-            const files = Array.from(e.dataTransfer.files).filter(file => file.name.endsWith('.csv'));
+            const files = Array.from(e.dataTransfer.files).filter(file => file.name.endsWith(".csv"));
             updateSelectedFiles(files);
         }
 
@@ -895,11 +934,11 @@
         }
 
         function selectShipping(type) {
-            document.querySelectorAll('.shipping-option').forEach(option => {
+            document.querySelectorAll('#content2 .shipping-option').forEach(option => {
                 option.classList.remove('selected');
             });
             event.currentTarget.classList.add('selected');
-            document.querySelector(`input[value="${type}"]`).checked = true;
+            document.querySelector(`#content2 input[value="${type}"]`).checked = true;
         }
 
         function calculateProfit() {
@@ -909,7 +948,7 @@
             const length = parseFloat(document.getElementById('lengthInput').value) || 1;
             const width = parseFloat(document.getElementById('widthInput').value) || 1;
             const height = parseFloat(document.getElementById('heightInput').value) || 1;
-            const shippingType = document.querySelector('input[name="shipping"]:checked').value;
+            const shippingType = document.querySelector('#content2 input[name="shipping"]:checked').value;
 
             if (price === 0 || weight === 0 || cost === 0) {
                 alert('请填写所有必要字段');
@@ -945,8 +984,8 @@
             if (selectedFiles.length === 0) return;
 
             // Show loading
-            loading.classList.remove("hidden");
-            results.classList.add("hidden");
+            loading.classList.remove('hidden');
+            results.classList.add('hidden');
 
             const formData = new FormData();
             selectedFiles.forEach(file => {
@@ -954,7 +993,7 @@
             });
 
             try {
-                const API_BASE_URL = "https://5000-ilgk1c1e9rs1t90aar20n-f91fae04.manusvm.computer";
+                const API_BASE_URL = "https://5000-ic48avy6kw0br1hpa09fb-d0bf6488.manusvm.computer";
                 const response = await fetch(`${API_BASE_URL}/api/csv/upload`, {
                     method: "POST",
                     body: formData,
@@ -985,14 +1024,14 @@
                 populateSimilarGroups(analysisResults.similar_groups);
                 populateUngroupedProducts(analysisResults.products);
 
-                loading.classList.add("hidden");
-                results.classList.remove("hidden");
-                results.classList.add("fade-in");
+                loading.classList.add('hidden');
+                results.classList.remove('hidden');
+                results.classList.add('fade-in');
 
             } catch (error) {
                 console.error("Error uploading files:", error);
                 alert("文件上传或分析失败: " + error.message);
-                loading.classList.add("hidden");
+                loading.classList.add('hidden');
             }
         }
 
@@ -1010,12 +1049,12 @@
                 return b[1].length - a[1].length; // Sort by group size descending
             });
             
-            for (const [groupId, group] of sortedGroups) {
+            for (const [groupId, currentGroup] of sortedGroups) { // Renamed 'group' to 'currentGroup'
                 groupCount++;
                 if (firstGroupId === null) firstGroupId = groupId;
                 
                 // Sort products by sales volume (high to low)
-                const sortedGroup = [...group].sort((a, b) => {
+                const sortedGroup = [...currentGroup].sort((a, b) => {
                     const volumeA = parseInt(a.product.volume_numeric) || 0;
                     const volumeB = parseInt(b.product.volume_numeric) || 0;
                     return volumeB - volumeA;
@@ -1028,7 +1067,7 @@
                     <div class="group-item-content">
                         <div class="group-item-info">
                             <div class="group-item-title">组 ${groupCount}</div>
-                            <div class="group-item-subtitle">${group.length}个商品</div>
+                            <div class="group-item-subtitle">${currentGroup.length}个商品</div>
                         </div>
                         <button class="group-item-button" onclick="copyGroupItemIds(${groupId}); event.stopPropagation();">
                             复制
@@ -1046,14 +1085,14 @@
                 detailedGroup.style.display = 'none'; // Initially hide all groups
                 detailedGroup.innerHTML = `
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                        组 ${groupCount} - ${group.length} 个相似商品 <span class="text-sm text-gray-600">(按销量排序)</span>
+                        组 ${groupCount} - ${currentGroup.length} 个相似商品 <span class="text-sm text-gray-600">(按销量排序)</span>
                     </h3>
                     <p class="text-sm text-gray-600 mb-4">这些商品被识别为相似商品，请根据图片、价格等因素人工判断选品。</p>
                     <div class="product-grid">
                         ${sortedGroup.map((item, index) => `
                             <div class="product-item">
                                 <div class="relative">
-                                    <img src="${item.product.image_url}" alt="${item.product.title}" class="product-image" onerror="this.style.display=\'none\'">
+                                    <img src="${item.product.image_url}" alt="${item.product.title}" class="product-image" onerror="this.style.display='none'">
                                     <div class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
                                         #${index + 1}
                                     </div>
@@ -1115,7 +1154,7 @@
                 }
             }
 
-            const ungroupedProducts = allProducts.filter(product => !groupedItemIds.has(extractItemId(product.product_url)));
+            const ungroupedProducts = allProducts.filter(product => !groupedItemIds.has(extractItemId(product.product_url))); // Changed product.product.url to product.product_url
             
             // Sort ungrouped products by sales volume (high to low)
             const sortedUngroupedProducts = ungroupedProducts.sort((a, b) => {
@@ -1132,7 +1171,7 @@
             ungroupedProductsListContainer.innerHTML = sortedUngroupedProducts.map((product, index) => `
                 <div class="ungrouped-product-item">
                     <div class="relative">
-                        <img src="${product.image_url}" alt="${product.title}" class="ungrouped-product-image" onerror="this.style.display=\'none\'">
+                        <img src="${product.image_url}" alt="${product.title}" class="ungrouped-product-image" onerror="this.style.display='none'">
                         <div class="absolute top-2 left-2 bg-gray-600 text-white text-xs px-2 py-1 rounded">
                             #${index + 1}
                         </div>
@@ -1169,7 +1208,7 @@
         // 选择并显示特定商品组
         function selectGroup(groupId) {
             // Remove active class from all group items
-            document.querySelectorAll('.group-item').forEach(item => {
+            document.querySelectorAll('#content2 .group-item').forEach(item => {
                 item.classList.remove('active');
             });
             
@@ -1180,7 +1219,7 @@
             }
             
             // Hide all group details
-            document.querySelectorAll('[id^="group-detail-"]').forEach(detail => {
+            document.querySelectorAll('#content2 [id^="group-detail-"]').forEach(detail => {
                 detail.style.display = 'none';
             });
             
@@ -1197,11 +1236,11 @@
             
             // 匹配多种eBay URL格式中的12位数字Item ID
             const patterns = [
-                /\/itm\/(\d{12})/,           // 标准格式: /itm/123456789012
-                /\/p\/(\d{12})/,            // 简化格式: /p/123456789012
-                /item=(\d{12})/,            // 查询参数格式: ?item=123456789012
-                /\/(\d{12})(?:\/|\?|$)/,    // 直接在路径中的12位数字
-                /ebay\.com\/.*?(\d{12})/    // 通用匹配eBay域名后的12位数字
+                /\/itm\/(\d{12})/,
+                /\/p\/(\d{12})/,
+                /item=(\d{12})/,
+                /\/(\d{12})(?:\/|\?|$)/,
+                /ebay\.com\/.*?(\d{12})/
             ];
             
             for (const pattern of patterns) {
@@ -1216,11 +1255,11 @@
 
         // 复制组内所有商品的Item ID (增强版，适合Excel导入)
         function copyGroupItemIds(groupId) {
-            const group = analysisResults.similar_groups[groupId];
-            if (!group) return;
+            const currentGroup = analysisResults.similar_groups[groupId];
+            if (!currentGroup) return;
             
             // 提取所有有效的Item ID
-            const itemIds = group.map(item => extractItemId(item.product.product_url))
+            const itemIds = currentGroup.map(item => extractItemId(item.product.product_url))
                                  .filter(id => id !== null && id !== 'N/A');
             
             if (itemIds.length === 0) {
@@ -1251,7 +1290,7 @@
 
         // 显示复制成功提示 (简化版，只显示按钮反馈)
         function showCopySuccess(groupNumber, count) {
-            const button = document.querySelector(`button[onclick="copyGroupItemIds(${groupNumber}); event.stopPropagation();"]`);
+            const button = document.querySelector(`#content2 button[onclick="copyGroupItemIds(${groupNumber}); event.stopPropagation();"]`);
             if (!button) return;
             
             const originalText = button.innerHTML;
@@ -1267,11 +1306,11 @@
             // 只在控制台显示成功消息，不显示弹出通知
             console.log(`✅ 成功复制组 ${groupNumber} 的 ${count} 个 Item ID，可直接粘贴到Excel中`);
         }
-        document.querySelector('#ungroupedContent .copy-btn').addEventListener('click', () => {
+        document.querySelector('#content2 #ungroupedContent .copy-btn').addEventListener('click', () => {
             const ungroupedProductsListContainer = document.getElementById("ungroupedProductsList");
             const ungroupedProductElements = Array.from(ungroupedProductsListContainer.children);
             const itemIds = ungroupedProductElements.map(el => {
-                const itemIdSpan = el.querySelector('.product-details .detail-item:last-child .detail-value');
+                const itemIdSpan = el.querySelector(".product-details .detail-item:last-child .detail-value");
                 return itemIdSpan ? itemIdSpan.textContent : null;
             }).filter(id => id !== null && id !== 'N/A').join('\n');
 
@@ -1289,10 +1328,6 @@
             });
         });
 
-        // 初始状态隐藏结果区域，只有上传文件后才显示
-        // results.classList.remove("hidden");
-        // populateUngroupedProducts();
-
         // 德国利润计算器功能
         let selectedShippingMethod = 'economy';
 
@@ -1300,12 +1335,12 @@
             selectedShippingMethod = method;
             
             // 更新UI显示
-            document.querySelectorAll('.shipping-option').forEach(option => {
+            document.querySelectorAll('#content2 .shipping-option').forEach(option => {
                 option.classList.remove('selected');
             });
             
-            document.querySelector(`.shipping-option input[value="${method}"]`).parentElement.classList.add('selected');
-            document.querySelector(`.shipping-option input[value="${method}"]`).checked = true;
+            document.querySelector(`#content2 .shipping-option input[value="${method}"]`).parentElement.classList.add('selected');
+            document.querySelector(`#content2 .shipping-option input[value="${method}"]`).checked = true;
         }
 
         function calculateProfit() {
@@ -1432,14 +1467,20 @@
         document.getElementById('calculateBtn').addEventListener('click', calculateProfit);
 
         // 绑定输入框回车事件 - 修复为新的类名
-        document.querySelectorAll('.compact-input, .mini-input').forEach(input => {
+        document.querySelectorAll('#content2 .compact-input, #content2 .mini-input').forEach(input => {
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     calculateProfit();
                 }
             });
         });
+
+        // Initialize with tab1 active
+        document.addEventListener('DOMContentLoaded', () => {
+            switchMainTab('tab1');
+        });
     </script>
 </body>
 </html>
+
 
