@@ -500,7 +500,7 @@
             <div class="flex justify-center items-center py-6">
                 <div class="flex items-center">
                     <i class="fas fa-chart-line text-blue-600 text-2xl mr-3"></i>
-                    <h1 class="text-3xl font-bold text-gray-900">eBay爆款分析器</h1>
+                    <h1 class="text-3xl font-bold text-gray-900">eBay选品工具</h1>
                 </div>
             </div>
         </div>
@@ -509,8 +509,8 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Tab Navigation -->
         <div class="flex border-b border-gray-200 mb-6">
-            <button id="tab1" class="tab-button active" onclick="switchMainTab('tab1')">开发中</button>
-            <button id="tab2" class="tab-button" onclick="switchMainTab('tab2')">eBay爆款分析器</button>
+            <button id="tab1" class="tab-button active" onclick="switchMainTab('tab1')">关键词分析</button>
+            <button id="tab2" class="tab-button" onclick="switchMainTab('tab2')">爆款分析</button>
         </div>
 
         <!-- Tab Content 1: One-Click Analysis Tool -->
@@ -518,10 +518,9 @@
             <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
                 <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                     <i class="fas fa-search text-blue-600 mr-2"></i>
-                    一键分析
+                    请输入eBay分类页网址
                 </h2>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">eBay商品列表页URL</label>
                     <input type="url" id="scraperUrlInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                            placeholder="例如: https://www.ebay.de/b/Smart-Home-Beleuchtungen/185044/bn_115383452">
                 </div>
@@ -538,7 +537,7 @@
                         <i class="fas fa-times mr-2"></i>
                         清空
                     </button>
-                    <button id="copyAllAnalysisBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                    <button id="copyAllAnalysisBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center" onclick="copyAllAnalysisData()">
                         <i class="fas fa-copy mr-2"></i>
                         一键复制
                     </button>
@@ -548,7 +547,7 @@
             <!-- Analysis Progress -->
             <div id="analysisProgress" class="hidden bg-white rounded-lg shadow-sm p-8 text-center mb-8">
                 <i class="fas fa-spinner loading text-4xl text-blue-600 mb-4"></i>
-                <p class="text-lg text-gray-600">正在分析商品标题...</p>
+                <p class="text-lg text-gray-600">正在分析eBay前台产品数据..</p>
                 <p class="text-sm text-gray-500 mt-2">这可能需要几分钟时间</p>
             </div>
 
@@ -575,7 +574,7 @@
                         </div>
                     </div>
 
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">关键词分析结果</h3>
+
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-gradient-to-br from-blue-600 to-purple-700 rounded-lg shadow-md text-white">
                             <thead>
@@ -1072,7 +1071,7 @@
             });
 
             try {
-                const API_BASE_URL = "https://5000-ikc5eavjim521b462xsxx-1fbd280f.manus.computer";
+                const API_BASE_URL = "https://5000-idw0vld9g1ea8ox9ao5ao-0ae160a9.manus.computer";
                 const response = await fetch(`${API_BASE_URL}/api/csv/upload`, {
                     method: "POST",
                     body: formData,
@@ -1599,7 +1598,7 @@
             startAnalysisBtn.innerHTML = '<i class="fas fa-spinner loading mr-2"></i>分析中...';
 
             try {
-                const API_BASE_URL = "https://5000-ikc5eavjim521b462xsxx-1fbd280f.manus.computer";
+                const API_BASE_URL = "https://5000-idw0vld9g1ea8ox9ao5ao-0ae160a9.manus.computer";
                 const response = await fetch(`${API_BASE_URL}/api/scraper/scrape`, {
                     method: 'POST',
                     headers: {
@@ -1666,9 +1665,13 @@
             scrapingResults = null; // Clear stored results
         }
 
-        function copyAllAnalysisData() {
+        function copyAllAnalysisData()         function copyAllAnalysisData() {
             if (!scrapingResults) {
-                alert('没有可复制的分析结果。');
+                const copyMessage = document.getElementById("copyMessage");
+                copyMessage.classList.remove("hidden");
+                setTimeout(() => {
+                    copyMessage.classList.add("hidden");
+                }, 3000); // 3秒后自动隐藏
                 return;
             }
 
@@ -1688,12 +1691,20 @@
             });
 
             navigator.clipboard.writeText(copyTextContent).then(() => {
-                alert('所有分析数据已复制到剪贴板！');
+                const button = document.getElementById('copyAllAnalysisBtn');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check mr-2"></i>已复制';
+                button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                button.classList.add('bg-green-500');
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('bg-green-500');
+                    button.classList.add('bg-green-600', 'hover:bg-green-700');
+                }, 2000);
             }).catch(err => {
                 console.error('复制失败:', err);
                 alert('复制失败，请手动复制。');
-            });
-        }
+            });   }
 
         // Initialize with tab1 active
         document.addEventListener('DOMContentLoaded', () => {
@@ -1702,5 +1713,12 @@
     </script>
 </body>
 </html>
+
+
+
+
+    <div id="copyMessage" class="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg hidden">
+        没有可复制的分析结果。
+    </div>
 
 
